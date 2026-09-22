@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
+import java.util.concurrent.Executor
 import java.util.Base64
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -118,11 +119,13 @@ class SettingsCodecTest {
 
 class ActionLogTest {
 
+    private val direct = Executor { it.run() }
+
     @Test
     fun `persists, reloads, caps size and clears`(@TempDir dir: File) {
         val file = File(dir, "log.jsonl")
         var now = 1_000L
-        val log = ActionLog(file, max = 3) { now++ }
+        val log = ActionLog(file, max = 3, clock = { now++ }, io = direct)
         log.add(LogEntry.Kind.HEARD, "abre youtube")
         log.add(LogEntry.Kind.PLAN, "open_app(youtube)")
         log.add(LogEntry.Kind.DONE, "open_app(youtube)")
@@ -130,12 +133,12 @@ class ActionLogTest {
         assertEquals(3, log.entries.value.size)
         assertEquals("multi line", log.entries.value.last().text)
 
-        val reloaded = ActionLog(file, max = 3)
+        val reloaded = ActionLog(file, max = 3, io = direct)
         assertEquals(log.entries.value, reloaded.entries.value)
 
         reloaded.clear()
         assertTrue(reloaded.entries.value.isEmpty())
-        assertTrue(ActionLog(file).entries.value.isEmpty())
+        assertTrue(ActionLog(file, io = direct).entries.value.isEmpty())
     }
 
     @Test

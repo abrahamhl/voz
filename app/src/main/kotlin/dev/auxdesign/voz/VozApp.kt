@@ -9,6 +9,7 @@ import dev.auxdesign.voz.data.AesGcmCipher
 import dev.auxdesign.voz.data.EncryptedSecretStore
 import dev.auxdesign.voz.data.InstalledApps
 import dev.auxdesign.voz.data.KeystoreKeys
+import dev.auxdesign.voz.data.LogEntry
 import dev.auxdesign.voz.data.SecretStore
 import dev.auxdesign.voz.data.SettingsStore
 import dev.auxdesign.voz.data.SharedPrefsKeyValueStore
@@ -24,6 +25,7 @@ import dev.auxdesign.voz.voice.Earcons
 import dev.auxdesign.voz.voice.SpeechController
 import dev.auxdesign.voz.voice.TtsController
 import dev.auxdesign.voz.voice.VoiceSession
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -46,7 +48,13 @@ val Context.graph: AppGraph get() = (applicationContext as VozApp).graph
 
 /** Hand-written dependency graph (no DI framework on purpose). */
 class AppGraph(app: Application) {
-    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    val actionLog = ActionLog(File(app.filesDir, "action_log.jsonl"))
+
+    /** Last-resort handler: an unexpected error ends the voice turn and is logged, instead of crashing the app. */
+    private val crashGuard = CoroutineExceptionHandler { _, e ->
+        actionLog.add(LogEntry.Kind.FAILED, "unexpected ${e.javaClass.simpleName}")
+    }
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate + crashGuard)
 
     val settingsStore = SettingsStore(app)
     val settings: StateFlow<VozSettings?> = settingsStore.settings.stateIn(scope, SharingStarted.Eagerly, null)
@@ -56,7 +64,6 @@ class AppGraph(app: Application) {
         AesGcmCipher { KeystoreKeys.getOrCreate("voz_secrets_key") },
     )
 
-    val actionLog = ActionLog(File(app.filesDir, "action_log.jsonl"))
     val installedApps = InstalledApps(app)
     val strings = Strings(app)
 

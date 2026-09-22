@@ -54,10 +54,17 @@ class BubbleService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
         }
-        if (!Permissions.canOverlay(this) || !startInForeground()) {
+        // startForegroundService() requires startForeground() before any early exit, or Android kills the app.
+        if (!startInForeground()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        if (!Permissions.canOverlay(this)) {
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
         }
@@ -188,9 +195,16 @@ class BubbleService : Service() {
         private val runningState = MutableStateFlow(false)
         val running: StateFlow<Boolean> = runningState.asStateFlow()
 
-        /** Call from the UI while the app is in the foreground. */
-        fun start(context: Context) {
-            ContextCompat.startForegroundService(context, Intent(context, BubbleService::class.java))
+        /** Call from the UI while the app is in the foreground. Returns false if it could not start. */
+        fun start(context: Context): Boolean {
+            if (!canStart(context)) return false
+            return try {
+                ContextCompat.startForegroundService(context, Intent(context, BubbleService::class.java))
+                true
+            } catch (e: RuntimeException) {
+                // e.g. ForegroundServiceStartNotAllowedException when not in the foreground.
+                false
+            }
         }
 
         fun stop(context: Context) {

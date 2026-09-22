@@ -64,8 +64,9 @@ class YouTubeFlows {
         return Comments.Collected(all)
     }
 
+    /** The active window decides; the last window event is only a fallback when the tree is unavailable. */
     private fun isYouTube(service: VozAccessibilityService): Boolean =
-        service.root()?.packageName == PACKAGE || service.foregroundPackage == PACKAGE
+        (service.root()?.packageName ?: service.foregroundPackage) == PACKAGE
 
     private fun panelOpen(service: VozAccessibilityService): Boolean {
         val root = service.root() ?: return false
@@ -78,25 +79,20 @@ class YouTubeFlows {
         return press(service, teaser)
     }
 
+    /** Taps the player to show its controls. Never taps blindly: without a player node, nothing happens. */
     private suspend fun revealPlayerControls(service: VozAccessibilityService, root: UiNode) {
         var player: UiNode? = null
         NodeFinder.walk(root) { node ->
             val id = node.viewId.orEmpty()
             if (player == null && node.isVisible && PLAYER_IDS.any { it in id }) player = node
         }
-        val target = player
-        if (target != null) {
-            service.tapAt(target.bounds.centerX, target.bounds.centerY)
-        } else {
-            // Portrait watch page: the player is the top band of the screen.
-            val metrics = service.resources.displayMetrics
-            service.tapAt(metrics.widthPixels / 2, (metrics.heightPixels * 0.15f).toInt())
-        }
+        val target = player ?: return
+        service.tapAt(target.bounds.centerX, target.bounds.centerY)
     }
 
     private suspend fun press(service: VozAccessibilityService, hit: NodeFinder.Hit): Boolean {
         val clickable = NodeFinder.clickableAncestor(hit.node)
-        if (clickable?.click() == true) return true
+        if (clickable != null) return clickable.click()
         val b = hit.node.bounds
         return service.tapAt(b.centerX, b.centerY)
     }

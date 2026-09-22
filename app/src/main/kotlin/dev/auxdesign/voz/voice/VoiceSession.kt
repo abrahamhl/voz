@@ -20,11 +20,14 @@ import dev.auxdesign.voz.engine.EngineProvider
 import dev.auxdesign.voz.util.Strings
 import dev.auxdesign.voz.util.effectiveLang
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * One voice turn: listen → route (grammar, app intent, engines) → confirm sensitive steps → execute → speak.
@@ -62,15 +65,18 @@ class VoiceSession(
 
     fun start() {
         if (isBusy) return
-        job = scope.launch {
+        val turn = scope.launch(start = CoroutineStart.LAZY) {
             try {
                 val lang = lang()
                 val texts = listen(lang) ?: return@launch
                 handle(texts, lang)
             } finally {
-                phaseState.value = Phase.IDLE
+                // A cancelled turn can finish late (e.g. a network call): never reset a newer turn's state.
+                if (job === coroutineContext[Job]) phaseState.value = Phase.IDLE
             }
         }
+        job = turn
+        turn.start()
     }
 
     fun stop() {
@@ -115,10 +121,14 @@ class VoiceSession(
     private suspend fun handle(texts: List<String>, lang: Lang) {
         val utterance = Utterance(texts.first(), lang, texts.drop(1))
         heardState.value = utterance.text
-        log.add(LogEntry.Kind.HEARD, utterance.text)
         phaseState.value = Phase.WORKING
         val s = current()
-        val outcome = router.route(utterance, executor.snapshot(), apps.matcher(), engines.planners(s))
+        // Tree walks, Keystore reads and network calls stay off the main thread.
+        val outcome = withContext(Dispatchers.Default) {
+            router.route(utterance, executor.snapshot(), apps.matcher(), engines.planners(s))
+        }
+        val dictation = outcome is Router.Outcome.Ready && outcome.plan.steps.any { it is Action.Type }
+        log.add(LogEntry.Kind.HEARD, if (dictation) "[dictation, ${utterance.text.length} chars]" else utterance.text)
         when (outcome) {
             Router.Outcome.Kill -> say(lang, R.string.say_stopped)
             is Router.Outcome.Ready -> run(outcome, lang, s)
@@ -149,8 +159,13 @@ class VoiceSession(
                 return
             }
             phaseState.value = Phase.WORKING
-            val env = ExecEnv(lang, s, preConfirmed = needed != null, ranker = engines.ranker()) { what -> confirm(lang, what) }
-            when (val result = executor.execute(step, env)) {
+            val env = ExecEnv(lang, s, confirmedTarget = needed?.target, ranker = engines.ranker()) { what -> confirm(lang, what) }
+            val before = withContext(Dispatchers.Default) { executor.foregroundPackage() }
+            val result = withContext(Dispatchers.Default) { executor.execute(step, env) }
+            if (result is ExecResult.Done && index < plan.steps.lastIndex) {
+                withContext(Dispatchers.Default) { executor.awaitSettled(step, before) }
+            }
+            when (result) {
                 is ExecResult.Done -> {
                     log.add(LogEntry.Kind.DONE, describe(step))
                     result.say?.let { say(lang, it) }

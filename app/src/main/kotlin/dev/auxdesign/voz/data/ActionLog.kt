@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 
 @Serializable
 data class LogEntry(val at: Long, val kind: Kind, val text: String) {
@@ -17,6 +19,8 @@ class ActionLog(
     private val file: File?,
     private val max: Int = DEFAULT_MAX,
     private val clock: () -> Long = System::currentTimeMillis,
+    /** Where the file is written; a single background thread by default, so callers never block on disk. */
+    private val io: Executor = Executors.newSingleThreadExecutor(),
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     private val state = MutableStateFlow(load())
@@ -46,7 +50,9 @@ class ActionLog(
 
     private fun persist(list: List<LogEntry>) {
         val f = file ?: return
-        runCatching { f.writeText(list.joinToString("\n") { json.encodeToString(LogEntry.serializer(), it) }) }
+        io.execute {
+            runCatching { f.writeText(list.joinToString("\n") { json.encodeToString(LogEntry.serializer(), it) }) }
+        }
     }
 
     companion object {

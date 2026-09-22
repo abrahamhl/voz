@@ -22,11 +22,13 @@ import dev.auxdesign.voz.core.model.SearchTarget
 import dev.auxdesign.voz.core.rank.CommentQuery
 import dev.auxdesign.voz.core.route.DecisionEngine
 import dev.auxdesign.voz.core.safety.SensitiveTargetDetector
+import dev.auxdesign.voz.core.text.Normalize
 import dev.auxdesign.voz.data.InstalledApps
 import dev.auxdesign.voz.data.VozSettings
 import dev.auxdesign.voz.flows.YouTubeFlows
 import dev.auxdesign.voz.util.Strings
 import java.text.NumberFormat
+import kotlinx.coroutines.delay
 import java.util.Locale
 
 sealed interface ExecResult {
@@ -36,11 +38,14 @@ sealed interface ExecResult {
     data class Cancelled(val say: String) : ExecResult
 }
 
-/** Per-step context: language, settings, and a way to ask the user "¿Confirmo?". */
+/**
+ * Per-step context: language, settings, and a way to ask the user "¿Confirmo?".
+ * [confirmedTarget] is the label the user already confirmed for this step (plan-level check), if any.
+ */
 class ExecEnv(
     val lang: Lang,
     val settings: VozSettings,
-    val preConfirmed: Boolean,
+    val confirmedTarget: String?,
     val ranker: DecisionEngine,
     val confirm: suspend (String) -> Boolean,
 )
@@ -60,6 +65,32 @@ class ActionExecutor(
         val svc = service ?: return ScreenSnapshot.EMPTY
         val root = svc.root() ?: return ScreenSnapshot(svc.foregroundPackage, emptyList())
         return ScreenSnapshot(root.packageName ?: svc.foregroundPackage, NodeFinder.flatten(root))
+    }
+
+    /** Package of the window in front right now (null if unknown). */
+    fun foregroundPackage(): String? = service?.let { it.root()?.packageName ?: it.foregroundPackage }
+
+    /**
+     * After a step that changes the window, wait (≤ 3 s) until the new window is in front, so the next
+     * step never acts on a stale tree or on coordinates from a window that is gone.
+     */
+    suspend fun awaitSettled(action: Action, packageBefore: String?) {
+        val opensSomethingElse = action is Action.OpenApp || action is Action.Search ||
+            (action is Action.Global && action.kind == GlobalKind.HOME)
+        val mayChangeWindow = opensSomethingElse || action is Action.Global || action is Action.Tap || action is Action.Fullscreen
+        if (!mayChangeWindow) return
+        if (opensSomethingElse) {
+            repeat(SETTLE_POLLS) {
+                delay(SETTLE_POLL_MS)
+                val now = foregroundPackage()
+                if (now != null && now != packageBefore) {
+                    delay(SETTLE_POLL_MS)
+                    return
+                }
+            }
+        } else {
+            delay(SETTLE_SHORT_MS)
+        }
     }
 
     suspend fun execute(action: Action, env: ExecEnv): ExecResult = when (action) {
@@ -133,26 +164,39 @@ class ActionExecutor(
         val svc = service ?: return needAccessibility(env)
         val root = svc.root() ?: return fail(env, R.string.say_not_found, label)
         val hit = NodeFinder.findByLabel(root, label) ?: return fail(env, R.string.say_not_found, label)
-        // The label the user said may differ from what is really there ("the blue button" -> "Pay").
-        if (!env.preConfirmed && detector.isSensitive(hit.label)) {
-            if (!env.confirm(strings.get(env.lang, R.string.confirm_tap, hit.label))) return cancelled(env)
-        }
         val clickable = NodeFinder.clickableAncestor(hit.node)
-        val pressed = clickable?.click() == true || svc.tapAt(hit.node.bounds.centerX, hit.node.bounds.centerY)
+        // Check what will really be pressed (matched text and the clickable container), not what the user said:
+        // "borrar" may match "Borrar cuenta", and a harmless label may sit inside a "Pay" button.
+        val pressedLabels = listOfNotNull(hit.label, clickable?.text, clickable?.description)
+            .map { Normalize.collapse(it) }
+            .filter { it.isNotBlank() }
+            .distinct()
+        val risky = pressedLabels.filter { detector.isSensitive(it) }
+        val confirmed = env.confirmedTarget?.let(Normalize::forMatch)
+        if (risky.isNotEmpty() && risky.any { Normalize.forMatch(it) != confirmed }) {
+            if (!env.confirm(strings.get(env.lang, R.string.confirm_tap, risky.first()))) return cancelled(env)
+        }
+        val pressed = if (clickable != null) {
+            clickable.click()
+        } else {
+            // Nothing clickable in the tree (e.g. web content): tap the label's own position in this fresh window.
+            svc.tapAt(hit.node.bounds.centerX, hit.node.bounds.centerY)
+        }
         return if (pressed) done(env, R.string.say_tapped, hit.label) else fail(env, R.string.say_action_failed)
     }
 
     private fun type(text: String, env: ExecEnv): ExecResult {
         val svc = service ?: return needAccessibility(env)
         val field = svc.root()?.let { NodeFinder.focusedEditable(it) } ?: return fail(env, R.string.say_no_field)
-        val existing = if (field.isShowingHint) null else field.text
+        // Password fields expose masked dots as text: always replace, never append.
+        val existing = if (field.isShowingHint || field.isPassword) null else field.text
         val value = if (existing.isNullOrBlank()) text else "$existing $text"
         return if (field.setText(value)) done(env, R.string.say_typed) else fail(env, R.string.say_action_failed)
     }
 
     private fun readScreen(env: ExecEnv): ExecResult {
         if (service == null) return needAccessibility(env)
-        val lines = snapshot().readableLines()
+        val lines = snapshot().readableLines().map { if (it.length > MAX_READ_LINE) it.take(MAX_READ_LINE) + "…" else it }
         if (lines.isEmpty()) return done(env, R.string.say_screen_empty)
         return ExecResult.Done(strings.get(env.lang, R.string.say_screen_intro, lines.joinToString(". ")))
     }
@@ -261,4 +305,11 @@ class ActionExecutor(
     private fun cancelled(env: ExecEnv) = ExecResult.Cancelled(strings.get(env.lang, R.string.say_cancelled))
 
     private fun needAccessibility(env: ExecEnv) = fail(env, R.string.say_need_a11y)
+
+    private companion object {
+        const val SETTLE_POLLS = 15
+        const val SETTLE_POLL_MS = 200L
+        const val SETTLE_SHORT_MS = 700L
+        const val MAX_READ_LINE = 200
+    }
 }

@@ -143,6 +143,17 @@ class A11yUiNode(private val info: AccessibilityNodeInfo, private val knownParen
     override val isVisible: Boolean get() = info.isVisibleToUser
     override val isFocused: Boolean get() = info.isFocused
     override val isShowingHint: Boolean get() = info.isShowingHintText
+    override val isPassword: Boolean get() = info.isPassword
+    override val scrollsOnlyHorizontally: Boolean
+        get() {
+            val ids = info.actionList.map { it.id }.toSet()
+            val sideways = AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_LEFT.id in ids ||
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_RIGHT.id in ids
+            val vertical = AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id in ids ||
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id in ids
+            val pager = info.className?.toString().orEmpty().let { "ViewPager" in it || "HorizontalScrollView" in it }
+            return (sideways || pager) && !vertical
+        }
     override val bounds: Box
         get() {
             val r = Rect()

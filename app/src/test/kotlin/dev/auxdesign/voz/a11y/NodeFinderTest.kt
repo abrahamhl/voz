@@ -17,6 +17,8 @@ class FakeNode(
     override val isVisible: Boolean = true,
     override val isFocused: Boolean = false,
     override val isShowingHint: Boolean = false,
+    override val isPassword: Boolean = false,
+    override val scrollsOnlyHorizontally: Boolean = false,
     override val bounds: Box = Box(0, 0, 100, 100),
     override val children: List<FakeNode> = emptyList(),
     override val isEnabled: Boolean = true,
@@ -106,6 +108,21 @@ class NodeFinderTest {
     @Test
     fun `largest visible scrollable wins`() {
         assertSame(bigList, NodeFinder.largestScrollable(root))
+    }
+
+    @Test
+    fun `vertical list beats a same-size horizontal pager and deeper node wins ties`() {
+        val list = FakeNode(isScrollable = true, bounds = Box(0, 0, 1000, 2000))
+        val pager = FakeNode(isScrollable = true, scrollsOnlyHorizontally = true, bounds = Box(0, 0, 1000, 2000), children = listOf(list))
+        assertSame(list, NodeFinder.largestScrollable(FakeNode(children = listOf(pager))))
+
+        val inner = FakeNode(isScrollable = true, bounds = Box(0, 0, 500, 500))
+        val outer = FakeNode(isScrollable = true, bounds = Box(0, 0, 500, 500), children = listOf(inner))
+        assertSame(inner, NodeFinder.largestScrollable(FakeNode(children = listOf(outer))))
+
+        val carousel = FakeNode(isScrollable = true, scrollsOnlyHorizontally = true, bounds = Box(0, 0, 1000, 3000))
+        val feed = FakeNode(isScrollable = true, bounds = Box(0, 0, 1000, 1000))
+        assertSame(feed, NodeFinder.largestScrollable(FakeNode(children = listOf(carousel, feed))))
     }
 
     @Test

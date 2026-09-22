@@ -28,6 +28,10 @@ interface UiNode {
     val isVisible: Boolean
     val isFocused: Boolean
     val isShowingHint: Boolean
+    val isPassword: Boolean
+
+    /** True for pagers/carousels that only scroll sideways (a vertical "scroll down" must skip them). */
+    val scrollsOnlyHorizontally: Boolean
     val bounds: Box
     val parent: UiNode?
     val children: List<UiNode>
@@ -90,10 +94,22 @@ object NodeFinder {
         return focused ?: firstEditable
     }
 
+    /**
+     * The list to scroll: prefers vertical scrollers over horizontal pagers, then the largest area;
+     * on equal area the deeper node wins (a pager and the list inside it often have the same bounds).
+     */
     fun largestScrollable(root: UiNode): UiNode? {
         var best: UiNode? = null
         walk(root) { node ->
-            if (node.isScrollable && node.isVisible && node.bounds.area > (best?.bounds?.area ?: -1L)) best = node
+            if (!node.isScrollable || !node.isVisible) return@walk
+            val current = best
+            best = when {
+                current == null -> node
+                current.scrollsOnlyHorizontally && !node.scrollsOnlyHorizontally -> node
+                !current.scrollsOnlyHorizontally && node.scrollsOnlyHorizontally -> current
+                node.bounds.area >= current.bounds.area -> node
+                else -> current
+            }
         }
         return best
     }
