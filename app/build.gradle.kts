@@ -28,8 +28,6 @@ android {
     lint {
         abortOnError = true
         checkReleaseBuilds = false
-        htmlReport = true
-        xmlReport = false
     }
 
     testOptions {
