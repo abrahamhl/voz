@@ -1,4 +1,133 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">VOZ</string>
+    <string name="lang_es" translatable="false">Español</string>
+    <string name="lang_en" translatable="false">English</string>
+    <string name="lang_nl" translatable="false">Nederlands</string>
+    <string name="target_youtube" translatable="false">YouTube</string>
+    <string name="target_google" translatable="false">Google</string>
+    <string name="target_maps" translatable="false">Google Maps</string>
+    <string name="target_play" translatable="false">Play Store</string>
+
+    <!-- Accessibility service -->
+    <string name="a11y_service_label">VOZ voice control</string>
+    <string name="a11y_service_description">VOZ reads the screen and acts on it only when you give a voice command: open apps, search, tap buttons, scroll, type and read comments. It has no accounts, no analytics and no servers. Everything runs on your phone unless you turn on the optional cloud brain.</string>
+
+    <!-- Floating mic -->
+    <string name="bubble_cd">VOZ microphone. Tap to speak</string>
+    <string name="bubble_cd_busy">VOZ is busy. Tap to stop</string>
+    <string name="notif_channel_name">Floating microphone</string>
+    <string name="notif_bubble_title">VOZ is ready</string>
+    <string name="notif_bubble_text">Tap the floating mic to give a command.</string>
+    <string name="notif_action_stop">Hide mic</string>
+
+    <!-- Onboarding -->
+    <string name="onb_step">Step %1$d of %2$d</string>
+    <string name="onb_title_mic">Microphone</string>
+    <string name="onb_body_mic">VOZ only listens after you tap the mic. Your phone’s speech service turns your voice into text.</string>
+    <string name="onb_btn_mic">Allow microphone</string>
+    <string name="onb_title_overlay">Floating mic</string>
+    <string name="onb_body_overlay">A small mic button floats over other apps, so you can talk to VOZ from anywhere.</string>
+    <string name="onb_btn_overlay">Allow display over other apps</string>
+    <string name="onb_title_a11y">Accessibility service</string>
+    <string name="onb_body_a11y">VOZ needs its accessibility service to read the screen and to tap, scroll and type for you. It only acts when you ask.</string>
+    <string name="onb_restricted_title">Installed the APK yourself? (Android 13 and later)</string>
+    <string name="onb_restricted_steps">1. Tap “Open app info”.\n2. Tap the ⋮ menu in the top corner.\n3. Tap “Allow restricted settings” and confirm.\n4. Come back, tap “Open accessibility settings” and turn on VOZ voice control.</string>
+    <string name="onb_btn_app_info">Open app info</string>
+    <string name="onb_btn_a11y">Open accessibility settings</string>
+    <string name="onb_title_cloud">Cloud brain (optional)</string>
+    <string name="onb_body_cloud">VOZ works offline. To understand free-form requests it can use Google Gemini with your own API key. The key is stored encrypted on this phone, and the cloud stays off until you turn it on in Settings.</string>
+    <string name="onb_key_label">Gemini API key</string>
+    <string name="onb_btn_save_key">Save key</string>
+    <string name="onb_key_saved">Key saved on this phone (encrypted).</string>
+    <string name="onb_btn_next">Next</string>
+    <string name="onb_btn_back">Back</string>
+    <string name="onb_btn_finish">Start using VOZ</string>
+    <string name="status_done">Done ✓</string>
+    <string name="status_missing">Not yet</string>
+
+    <!-- Home -->
+    <string name="home_tap_to_speak">Tap to speak</string>
+    <string name="home_listening">Listening… tap to stop</string>
+    <string name="home_thinking">Working… tap to stop</string>
+    <string name="home_speaking">Speaking… tap to stop</string>
+    <string name="home_confirming">Say yes or no</string>
+    <string name="home_you_said">You said: %1$s</string>
+    <string name="home_voz_said">VOZ: %1$s</string>
+    <string name="home_service_on">Accessibility service: on</string>
+    <string name="home_service_off">Accessibility service: off. Open Setup to turn it on.</string>
+    <string name="home_bubble_show">Show floating mic</string>
+    <string name="home_bubble_hide">Hide floating mic</string>
+    <string name="home_bubble_needs">The floating mic needs the microphone and “display over other apps” permissions. Open Setup.</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_log">Action log</string>
+    <string name="home_setup">Setup</string>
+    <string name="home_try_title">Try saying</string>
+    <string name="home_try_examples">“Open YouTube” · “Search cats on YouTube” · “Read the screen” · “Tap Subscribe” · “Scroll down” · “Full screen” · “Read the funniest comments” · “Stop”</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">Phone language</string>
+    <string name="settings_cloud">Cloud brain (Gemini)</string>
+    <string name="settings_cloud_desc">Off by default. When on, only commands VOZ doesn’t understand are sent, together with a short text-only summary of the screen.</string>
+    <string name="settings_cloud_no_key">Add an API key first.</string>
+    <string name="settings_key_saved">A key is saved on this phone (encrypted).</string>
+    <string name="settings_key_delete">Delete key</string>
+    <string name="settings_comment_depth">Comment scrolls: %1$d</string>
+    <string name="settings_speech_rate">Speech rate: %1$.1f×</string>
+    <string name="settings_bubble_size">Floating mic size</string>
+    <string name="bubble_small">Small</string>
+    <string name="bubble_medium">Medium</string>
+    <string name="bubble_large">Large</string>
+    <string name="settings_high_contrast">High contrast</string>
+    <string name="settings_privacy">Privacy: VOZ has no accounts, no analytics and no servers. The action log stays on this phone.</string>
+    <string name="back">Back</string>
+
+    <!-- Action log -->
+    <string name="log_title">Action log</string>
+    <string name="log_empty">Nothing yet. Your commands will appear here.</string>
+    <string name="log_clear">Clear log</string>
+    <string name="log_kind_heard">Heard</string>
+    <string name="log_kind_plan">Plan</string>
+    <string name="log_kind_done">Done</string>
+    <string name="log_kind_failed">Failed</string>
+    <string name="log_kind_confirm">Confirmed</string>
+    <string name="log_kind_blocked">Blocked</string>
+
+    <!-- Spoken replies -->
+    <string name="say_not_heard">I didn’t catch that.</string>
+    <string name="say_not_understood">Sorry, I don’t know how to do that yet.</string>
+    <string name="say_mic_error">I can’t use the microphone. Check the permission in Setup.</string>
+    <string name="say_speech_unavailable">Speech recognition isn’t available on this phone.</string>
+    <string name="say_speech_error">Speech recognition failed. Try again.</string>
+    <string name="say_need_a11y">Turn on the VOZ accessibility service first.</string>
+    <string name="say_stopped">Stopped.</string>
+    <string name="say_cancelled">Cancelled.</string>
+    <string name="say_confirm">Should I %1$s? Say yes or no.</string>
+    <string name="say_confirm_again">Please say yes or no.</string>
+    <string name="say_rejected">I won’t do that. It isn’t allowed.</string>
+    <string name="say_cloud_error">The cloud brain didn’t answer, and I don’t know how to do that offline.</string>
+    <string name="say_opening">Opening %1$s.</string>
+    <string name="say_app_not_found">I can’t find an app called %1$s.</string>
+    <string name="say_searching">Searching %1$s on %2$s.</string>
+    <string name="say_tapped">Tapped %1$s.</string>
+    <string name="say_not_found">I can’t see %1$s on the screen.</string>
+    <string name="say_typed">Typed.</string>
+    <string name="say_no_field">There is no text field selected.</string>
+    <string name="say_screen_empty">I can’t see any text on the screen.</string>
+    <string name="say_screen_intro">On screen: %1$s</string>
+    <string name="say_rotate_permission">To rotate the screen I need permission to modify system settings. I’m opening that screen for you.</string>
+    <string name="say_rotated_landscape">Landscape.</string>
+    <string name="say_rotated_portrait">Portrait.</string>
+    <string name="say_open_video_first">Open a video in YouTube first.</string>
+    <string name="say_comments_not_found">I couldn’t open the comments.</string>
+    <string name="say_no_comments">I didn’t find any comments.</string>
+    <string name="say_no_topic_comments">No comments talk about %1$s.</string>
+    <string name="say_no_funny">I didn’t find funny comments, so here are the most popular.</string>
+    <string name="say_comment_likes">Comment %1$d. Likes: %2$s. %3$s</string>
+    <string name="say_comment">Comment %1$d. %2$s</string>
+    <string name="say_scroll_failed">I can’t scroll here.</string>
+    <string name="say_action_failed">That didn’t work.</string>
+    <string name="confirm_tap">tap %1$s</string>
 </resources>

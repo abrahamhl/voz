@@ -33,6 +33,9 @@ jobs:
         run: ./gradlew --no-daemon :core:test
       - name: App unit tests, lint and debug build
         run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+      - name: Test summary
+        if: always()
+        run: python3 scripts/test-summary.py core app | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
         with:
