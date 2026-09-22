@@ -1,0 +1,32 @@
+# Local agent/working files (never tracked)
+CLAUDE.md
+.ai/
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+
+# Android / IDE
+local.properties
+*.iml
+.idea/
+.cxx/
+.externalNativeBuild/
+captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+output-metadata.json
+
+# Signing & secrets
+*.jks
+*.keystore
+.env*
+secrets.properties
+
+# OS
+.DS_Store
+Thumbs.db

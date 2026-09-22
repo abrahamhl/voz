@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="voz_brand">#FF1B3A8C</color>
+    <color name="voz_on_brand">#FFFFFFFF</color>
+    <color name="voz_listening">#FFC62828</color>
+</resources>
