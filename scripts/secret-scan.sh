@@ -13,7 +13,7 @@ patterns=(
 )
 status=0
 for p in "${patterns[@]}"; do
-  if git grep -nIE -- "$p" -- ':!scripts/secret-scan.sh' ; then
+  if git grep --untracked -nIE -- "$p" -- ':!scripts/secret-scan.sh' ; then
     echo "::error::possible secret matching: $p"
     status=1
   fi

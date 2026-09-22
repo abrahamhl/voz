@@ -32,12 +32,12 @@ class SecretStoreContractTest {
 
     @Test
     fun `round trips and never stores plaintext`() {
-        val secret = "AIza-not-a-real-key-0123456789"
-        assertTrue(store.put(SecretStore.GEMINI_API_KEY, secret))
-        assertEquals(secret, store.get(SecretStore.GEMINI_API_KEY))
+        val plain = "example value for tests"
+        assertTrue(store.put(SecretStore.GEMINI_API_KEY, plain))
+        assertEquals(plain, store.get(SecretStore.GEMINI_API_KEY))
         val raw = kv.map.getValue(SecretStore.GEMINI_API_KEY)
-        assertFalse(raw.contains(secret))
-        assertFalse(String(Base64.getDecoder().decode(raw), Charsets.ISO_8859_1).contains(secret))
+        assertFalse(raw.contains(plain))
+        assertFalse(String(Base64.getDecoder().decode(raw), Charsets.ISO_8859_1).contains(plain))
         assertTrue(store.has(SecretStore.GEMINI_API_KEY))
     }
 
