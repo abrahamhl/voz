@@ -42,6 +42,13 @@ jobs:
           name: voz-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
       - name: Upload reports
         if: failure()
         uses: actions/upload-artifact@v7
