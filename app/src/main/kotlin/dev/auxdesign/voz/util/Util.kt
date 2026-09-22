@@ -10,6 +10,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import dev.auxdesign.voz.core.model.Lang
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -42,7 +43,7 @@ object Permissions {
         }
 
     fun overlaySettings(context: Context): Intent =
-        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
+        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:${context.packageName}".toUri())
 
     fun appInfo(context: Context): Intent =
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))

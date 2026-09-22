@@ -30,6 +30,13 @@ android {
         checkReleaseBuilds = false
     }
 
+    bundle {
+        // Spoken replies switch language at runtime, so every language must ship in every install.
+        language {
+            enableSplit = false
+        }
+    }
+
     testOptions {
         unitTests.isReturnDefaultValues = true
     }

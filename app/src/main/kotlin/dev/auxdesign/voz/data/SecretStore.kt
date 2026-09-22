@@ -1,6 +1,7 @@
 package dev.auxdesign.voz.data
 
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import java.security.KeyStore
@@ -95,8 +96,6 @@ class SharedPrefsKeyValueStore(private val prefs: SharedPreferences) : KeyValueS
     override fun getString(key: String): String? = prefs.getString(key, null)
 
     override fun putString(key: String, value: String?) {
-        val editor = prefs.edit()
-        if (value == null) editor.remove(key) else editor.putString(key, value)
-        editor.apply()
+        prefs.edit { if (value == null) remove(key) else putString(key, value) }
     }
 }

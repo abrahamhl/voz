@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
 import android.net.Uri
+import androidx.core.net.toUri
 import android.provider.Settings
 import android.view.Surface
 import androidx.annotation.StringRes
@@ -166,7 +167,7 @@ class ActionExecutor(
     /** Toggles portrait/landscape. Needs "modify system settings", which the user grants in a guided screen. */
     private fun rotate(env: ExecEnv): ExecResult {
         if (!Settings.System.canWrite(context)) {
-            launch(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:${context.packageName}")))
+            launch(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, "package:${context.packageName}".toUri()))
             return ExecResult.Failed(strings.get(env.lang, R.string.say_rotate_permission))
         }
         val resolver = context.contentResolver
@@ -242,7 +243,7 @@ class ActionExecutor(
         }
     }
 
-    private fun view(uri: String) = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+    private fun view(uri: String) = Intent(Intent.ACTION_VIEW, uri.toUri())
 
     private fun targetName(target: SearchTarget): String = context.getString(
         when (target) {
