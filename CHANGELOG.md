@@ -19,8 +19,18 @@ First demo build. Debug-signed APK for sideloading; not published on Google Play
 - Onboarding in 4 steps (microphone, floating mic, accessibility service with Android 13+ restricted-settings guide, optional cloud key); settings (language, cloud, comment depth, speech rate, bubble size, high contrast); action log screen.
 - Android Keystore–encrypted storage for the API key; DataStore settings.
 - ES/EN/NL user interface.
-- CI: secret scan, 262 unit tests, Android lint and debug APK on every push; release workflow attaching `voz-demo.apk` to tagged releases.
+- CI: secret scan, 266 unit tests, Android lint and debug APK on every push; release workflow attaching `voz-demo.apk` to tagged releases.
 - Documentation: README, pitch, business model, architecture, privacy, security, Play accessibility declaration draft, demo script, landing page.
+
+### Security
+- Sensitive taps are re-confirmed against the label and container actually pressed, not only the words spoken.
+- The accessibility service is declared as an accessibility tool (`isAccessibilityTool`), as required by Google Play for assistive automation.
+- Dictated text is stored in the action log only as its length.
+
+### Fixed (from the pre-release review)
+- Floating mic always reaches `startForeground` before stopping; it can no longer crash on a missing overlay permission.
+- Routing, screen reading and actions run off the main thread; cloud requests are cancelled when the user stops.
+- Multi-step plans wait for the next window; scrolling prefers vertical lists over horizontal pagers; password fields are replaced, not appended; silence is reported as "didn't catch that"; long replies are split for the speech engine.
 
 [Unreleased]: https://github.com/abrahamhl/voz/compare/v0.1.0-demo...HEAD
 [0.1.0-demo]: https://github.com/abrahamhl/voz/releases/tag/v0.1.0-demo
