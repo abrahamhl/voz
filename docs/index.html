@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VOZ — Voice control for Android, accessibility first</title>
+<meta name="description" content="Talk to your Android phone and VOZ does the taps. Built first for blind and motor-impaired people. Offline by default, open source.">
+<link rel="canonical" href="https://abrahamhl.github.io/voz/">
+<meta name="theme-color" content="#1b3a8c">
+<meta property="og:type" content="website">
+<meta property="og:title" content="VOZ — Talk to your phone. VOZ does the taps.">
+<meta property="og:description" content="Voice control for Android, built first for blind and motor-impaired people. Offline by default, open source.">
+<meta property="og:url" content="https://abrahamhl.github.io/voz/">
+<meta property="og:image" content="https://abrahamhl.github.io/voz/media/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="VOZ logo: a white microphone on deep blue, with the tagline Talk to your phone. VOZ does the taps.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="media/icon.svg" type="image/svg+xml">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "VOZ",
+  "applicationCategory": "AccessibilityApplication",
+  "operatingSystem": "Android 8.0+",
+  "description": "Voice control for Android, built first for blind and motor-impaired people. Offline by default, open source.",
+  "inLanguage": ["en", "es", "nl"],
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
+  "softwareVersion": "0.1.0-demo",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+  "url": "https://abrahamhl.github.io/voz/"
+}
+</script>
+<style>
+:root {
+  --ink: #0b1020;
+  --paper: #ffffff;
+  --brand: #1b3a8c;
+  --brand-deep: #0f2463;
+  --accent: #ffe600;
+  --muted: #3d4660;
+  --line: #d5dbeb;
+  --card: #f3f6fd;
+  --focus: #ffe600;
+  --radius: 14px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --ink: #eef1fa; --paper: #0b1020; --muted: #b9c1d9; --line: #2a3350; --card: #141b33; }
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 88px; -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+body {
+  margin: 0; font-family: var(--font); font-size: 1.125rem; line-height: 1.6;
+  color: var(--ink); background: var(--paper);
+  overflow-wrap: break-word; hyphens: auto;
+}
+h1, h2, h3 { line-height: 1.15; overflow-wrap: break-word; hyphens: auto; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 6px; box-shadow: 0 0 0 6px #000; }
+.skip { position: absolute; left: -9999px; top: 0; background: var(--accent); color: #000; padding: .75rem 1rem; z-index: 200; font-weight: 700; }
+.skip:focus { left: 1rem; top: 1rem; }
+
+/* Fixed bar: never hides. */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; gap: 1rem; padding: .75rem clamp(1rem, 4vw, 2.5rem);
+  background: var(--brand-deep); color: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+.brand { display: flex; align-items: center; gap: .5rem; font-weight: 800; font-size: 1.35rem; letter-spacing: .08em; text-decoration: none; min-height: 44px; min-width: 44px; }
+.brand svg { width: 34px; height: 34px; }
+.nav .links { display: none; gap: 1.25rem; margin-left: 1rem; }
+.nav .links a { text-decoration: none; font-weight: 600; opacity: .92; min-height: 44px; display: inline-flex; align-items: center; }
+.nav .links a:hover { text-decoration: underline; }
+.nav .spacer { flex: 1; }
+.lang { display: flex; gap: .25rem; }
+.lang a { text-decoration: none; font-weight: 700; font-size: .95rem; padding: .45rem .6rem; border-radius: 8px; border: 1px solid rgba(255,255,255,.35); min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+.lang a:hover { background: rgba(255,255,255,.12); }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  min-height: 52px; padding: .8rem 1.4rem; border-radius: 999px; font-weight: 800; font-size: 1.05rem;
+  text-decoration: none; border: 2px solid transparent;
+}
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { background: #fff27a; }
+.btn-ghost { border-color: currentColor; }
+.nav .btn { min-height: 44px; padding: .5rem 1rem; font-size: .95rem; }
+@media (min-width: 900px) { .nav .links { display: flex; } }
+@media (max-width: 480px) { .nav .btn span.long { display: none; } .nav { gap: .5rem; } .brand span { display: none; } }
+
+/* Language sections: EN by default, ES/NL via #es / #nl (no JavaScript). */
+.lang-section { display: none; }
+#en { display: block; }
+#es:target, #nl:target { display: block; }
+#es:target ~ #en, #nl:target ~ #en { display: none; }
+
+.hero { background: linear-gradient(160deg, var(--brand) 0%, var(--brand-deep) 70%); color: #fff; padding: calc(88px + 3rem) clamp(1rem, 5vw, 4rem) 4rem; }
+.hero-inner { max-width: 1100px; margin: 0 auto; display: grid; gap: 2.5rem; align-items: center; }
+@media (min-width: 900px) { .hero-inner { grid-template-columns: 1.3fr 1fr; } }
+.hero h1, .hero .h1 { font-size: clamp(2.2rem, 6vw, 4rem); margin: 0 0 1rem; max-width: 16ch; font-weight: 900; }
+.hero p.lead { font-size: clamp(1.15rem, 2.4vw, 1.4rem); max-width: 40ch; margin: 0 0 2rem; color: #e6ebff; }
+.cta { display: flex; flex-wrap: wrap; gap: 1rem; }
+.phone { justify-self: center; width: min(300px, 80vw); aspect-ratio: 9 / 18; border-radius: 36px; background: #0a0f24; border: 8px solid #1d2748; position: relative; box-shadow: 0 30px 60px rgba(0,0,0,.4); padding: 1.25rem 1rem; display: flex; flex-direction: column; gap: .75rem; }
+.bubble-say { background: #fff; color: #0b1020; border-radius: 18px 18px 18px 4px; padding: .7rem .9rem; font-weight: 700; font-size: 1rem; max-width: 90%; }
+.bubble-voz { background: var(--accent); color: #000; border-radius: 18px 18px 4px 18px; padding: .7rem .9rem; font-size: .95rem; align-self: flex-end; max-width: 90%; }
+.mic { margin-top: auto; align-self: center; width: 76px; height: 76px; border-radius: 50%; background: #c62828; display: grid; place-items: center; box-shadow: 0 0 0 10px rgba(198,40,40,.25); }
+.mic svg { width: 40px; height: 40px; }
+
+section.block { padding: 4rem clamp(1rem, 5vw, 4rem); }
+.wrap { max-width: 1100px; margin: 0 auto; }
+section.block h2 { font-size: clamp(1.7rem, 4vw, 2.5rem); margin: 0 0 1rem; max-width: 30ch; }
+section.block p.intro { color: var(--muted); max-width: 60ch; margin: 0 0 2rem; }
+.grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; }
+.card h3 { margin: 0 0 .5rem; font-size: 1.25rem; }
+.card p { margin: 0; color: var(--muted); }
+.num { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 800; margin-bottom: .75rem; }
+.alt { background: var(--card); }
+.cmds { list-style: none; padding: 0; margin: 0; display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.cmds li { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: .9rem 1rem; }
+.cmds q { font-weight: 800; quotes: "“" "”"; }
+.cmds span { display: block; color: var(--muted); font-size: 1rem; }
+.wow { background: var(--brand-deep); color: #fff; }
+.wow p.intro { color: #d7def7; }
+.wow .card { background: #13296b; border-color: #2c4596; }
+.wow .card p { color: #e6ebff; }
+ol.steps { padding-left: 1.4rem; max-width: 70ch; }
+ol.steps li { margin-bottom: .75rem; }
+ul.checks { list-style: none; padding: 0; display: grid; gap: .6rem; max-width: 70ch; }
+ul.checks li::before { content: "✓ "; font-weight: 900; color: var(--brand); }
+@media (prefers-color-scheme: dark) { ul.checks li::before { color: var(--accent); } }
+.note { font-size: 1rem; color: var(--muted); }
+footer { padding: 2.5rem clamp(1rem, 5vw, 4rem); border-top: 1px solid var(--line); font-size: 1rem; color: var(--muted); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; }
+footer nav a { margin-right: 1rem; }
+</style>
+</head>
+<body id="top">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <a class="brand" href="#top" aria-label="VOZ home">
+    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="24" fill="#ffe600"/><path fill="#0f2463" d="M24 27.3c2.2 0 4-1.8 4-4V15c0-2.2-1.8-4-4-4s-4 1.8-4 4v8.3c0 2.2 1.8 4 4 4zm7-4c0 3.9-3.2 6.8-7 6.8s-7-2.9-7-6.8h-2.3c0 4.5 3.6 8.3 8 8.9V36h2.6v-3.8c4.4-.6 8-4.4 8-8.9H31z"/></svg>
+    <span>VOZ</span>
+  </a>
+  <nav class="links" aria-label="Sections">
+    <a href="#how">How it works</a>
+    <a href="#commands">Commands</a>
+    <a href="#privacy">Privacy</a>
+    <a href="#install">Install</a>
+  </nav>
+  <span class="spacer"></span>
+  <nav class="lang" aria-label="Language">
+    <a href="#top" hreflang="en" lang="en" aria-label="English">EN</a>
+    <a href="#es" hreflang="es" lang="es" aria-label="Español">ES</a>
+    <a href="#nl" hreflang="nl" lang="nl" aria-label="Nederlands">NL</a>
+  </nav>
+  <a class="btn btn-primary" href="https://github.com/abrahamhl/voz/releases/latest"><span class="long">Download</span> APK</a>
+</header>
+
+<main id="main">
+
+<!-- ============================ ESPAÑOL ============================ -->
+<div id="es" class="lang-section" lang="es">
+  <section class="hero" aria-labelledby="es-title">
+    <div class="hero-inner">
+      <div>
+        <h2 id="es-title" class="h1">Habla con tu móvil. VOZ pulsa por ti.</h2>
+        <p class="lead">Control por voz para Android, pensado primero para personas ciegas y con movilidad reducida. Funciona sin conexión y es de código abierto.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="https://github.com/abrahamhl/voz/releases/latest">Descargar APK de demostración</a>
+          <a class="btn btn-ghost" href="#es-install">Cómo instalarla</a>
+        </div>
+      </div>
+      <div class="phone" aria-hidden="true">
+        <div class="bubble-say">«Lee los comentarios más graciosos»</div>
+        <div class="bubble-voz">Comentario 1. Me gusta: 1.234. «Me muero con el gato jajaja»</div>
+        <div class="mic"><svg viewBox="0 0 24 24"><path fill="#fff" d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg></div>
+      </div>
+    </div>
+  </section>
+  <section class="block" aria-labelledby="es-how">
+    <div class="wrap">
+      <h2 id="es-how">Cómo funciona</h2>
+      <p class="intro">Los lectores de pantalla hicieron el móvil usable sin vista, pero cada tarea sigue siendo decenas de gestos. VOZ añade la capa que faltaba: dices lo que quieres y VOZ hace los toques.</p>
+      <div class="grid">
+        <div class="card"><div class="num" aria-hidden="true">1</div><h3>Lo dices</h3><p>Toca el micrófono flotante o el botón de accesibilidad y habla en español, inglés o neerlandés.</p></div>
+        <div class="card"><div class="num" aria-hidden="true">2</div><h3>VOZ lo hace</h3><p>Abre apps, pulsa botones por su nombre, se desplaza, escribe y te lee la pantalla en voz alta.</p></div>
+        <div class="card"><div class="num" aria-hidden="true">3</div><h3>Te pregunta antes</h3><p>Enviar, pagar, comprar, borrar, llamar o transferir siempre piden un «sí». Di «para» y todo se detiene.</p></div>
+      </div>
+    </div>
+  </section>
+  <section class="block alt" aria-labelledby="es-cmds">
+    <div class="wrap">
+      <h2 id="es-cmds">Prueba a decir</h2>
+      <ul class="cmds">
+        <li><q>Abre WhatsApp</q><span>Abre cualquier app instalada</span></li>
+        <li><q>Busca gatitos en YouTube</q><span>YouTube, Google, Maps o Play Store</span></li>
+        <li><q>Lee la pantalla</q><span>Te dice lo que hay a la vista</span></li>
+        <li><q>Toca Suscribirse</q><span>Pulsa un botón por su texto</span></li>
+        <li><q>Escribe llego en diez minutos</q><span>Escribe en el campo activo</span></li>
+        <li><q>Baja</q> · <q>Atrás</q> · <q>Inicio</q><span>Navegación sin tocar</span></li>
+      </ul>
+    </div>
+  </section>
+  <section class="block wow" aria-labelledby="es-wow">
+    <div class="wrap">
+      <h2 id="es-wow">El momento «guau»: los comentarios de YouTube</h2>
+      <p class="intro">«Lee los comentarios más graciosos». VOZ abre los comentarios, se desplaza, quita duplicados, los ordena por risas y me gusta, y te lee los tres mejores.</p>
+      <div class="grid">
+        <div class="card"><h3>Más populares</h3><p>Ordenados por «me gusta».</p></div>
+        <div class="card"><h3>Más graciosos</h3><p>Risas y emojis en español, inglés y neerlandés.</p></div>
+        <div class="card"><h3>Sobre un tema</h3><p>«Lee los comentarios sobre el final».</p></div>
+      </div>
+    </div>
+  </section>
+  <section class="block" aria-labelledby="es-privacy">
+    <div class="wrap">
+      <h2 id="es-privacy">Privacidad sin letra pequeña</h2>
+      <ul class="checks">
+        <li>Sin cuentas, sin analíticas, sin anuncios y sin servidores propios.</li>
+        <li>Solo escucha cuando tocas el micrófono. Solo lee la pantalla cuando das una orden.</li>
+        <li>El registro de acciones se queda en tu móvil y puedes borrarlo.</li>
+        <li>El cerebro en la nube es opcional, con tu propia clave, y viene apagado.</li>
+      </ul>
+    </div>
+  </section>
+  <section class="block alt" id="es-install" aria-labelledby="es-inst">
+    <div class="wrap">
+      <h2 id="es-inst">Instalar en 4 pasos</h2>
+      <ol class="steps">
+        <li>Descarga <strong>voz-demo.apk</strong> desde la página de versiones.</li>
+        <li>Permite la instalación cuando Android lo pida.</li>
+        <li>Android 13 o posterior: Ajustes → Apps → VOZ → ⋮ → <strong>Permitir ajustes restringidos</strong>.</li>
+        <li>Ajustes → Accesibilidad → <strong>Control por voz VOZ</strong> → Activar. Abre VOZ y sigue los 4 pasos.</li>
+      </ol>
+      <p class="note">Versión de demostración firmada en modo depuración. Todavía no está en Google Play.</p>
+    </div>
+  </section>
+</div>
+
+<!-- ============================ NEDERLANDS ============================ -->
+<div id="nl" class="lang-section" lang="nl">
+  <section class="hero" aria-labelledby="nl-title">
+    <div class="hero-inner">
+      <div>
+        <h2 id="nl-title" class="h1">Praat met je telefoon. VOZ tikt voor je.</h2>
+        <p class="lead">Spraakbediening voor Android, in de eerste plaats gemaakt voor blinde en motorisch beperkte mensen. Werkt offline en is open source.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="https://github.com/abrahamhl/voz/releases/latest">Demo-APK downloaden</a>
+          <a class="btn btn-ghost" href="#nl-install">Zo installeer je het</a>
+        </div>
+      </div>
+      <div class="phone" aria-hidden="true">
+        <div class="bubble-say">‘Lees de grappigste reacties’</div>
+        <div class="bubble-voz">Reactie 1. Likes: 1.234. ‘Ik lig dubbel om die kat haha’</div>
+        <div class="mic"><svg viewBox="0 0 24 24"><path fill="#fff" d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg></div>
+      </div>
+    </div>
+  </section>
+  <section class="block" aria-labelledby="nl-how">
+    <div class="wrap">
+      <h2 id="nl-how">Zo werkt het</h2>
+      <p class="intro">Schermlezers maakten de telefoon bruikbaar zonder zicht, maar elke taak kost nog tientallen gebaren. VOZ voegt de ontbrekende laag toe: jij zegt wat je wilt, VOZ doet de tikken.</p>
+      <div class="grid">
+        <div class="card"><div class="num" aria-hidden="true">1</div><h3>Jij zegt het</h3><p>Tik op de zwevende microfoon of de toegankelijkheidsknop en spreek in het Nederlands, Engels of Spaans.</p></div>
+        <div class="card"><div class="num" aria-hidden="true">2</div><h3>VOZ doet het</h3><p>Opent apps, tikt op knoppen via hun naam, scrolt, typt en leest het scherm voor.</p></div>
+        <div class="card"><div class="num" aria-hidden="true">3</div><h3>Eerst bevestigen</h3><p>Versturen, betalen, kopen, verwijderen, bellen of overmaken vraagt altijd om een ‘ja’. Zeg ‘stop maar’ en alles stopt.</p></div>
+      </div>
+    </div>
+  </section>
+  <section class="block alt" aria-labelledby="nl-cmds">
+    <div class="wrap">
+      <h2 id="nl-cmds">Probeer te zeggen</h2>
+      <ul class="cmds">
+        <li><q>Open WhatsApp</q><span>Opent elke geïnstalleerde app</span></li>
+        <li><q>Zoek katten op YouTube</q><span>YouTube, Google, Maps of Play Store</span></li>
+        <li><q>Lees het scherm voor</q><span>Vertelt wat er te zien is</span></li>
+        <li><q>Tik op Abonneren</q><span>Tikt op een knop via de tekst</span></li>
+        <li><q>Typ ik kom eraan</q><span>Typt in het actieve veld</span></li>
+        <li><q>Naar beneden</q> · <q>Ga terug</q> · <q>Startscherm</q><span>Navigeren zonder aanraken</span></li>
+      </ul>
+    </div>
+  </section>
+  <section class="block wow" aria-labelledby="nl-wow">
+    <div class="wrap">
+      <h2 id="nl-wow">Het wow-moment: YouTube-reacties</h2>
+      <p class="intro">‘Lees de grappigste reacties’. VOZ opent de reacties, scrolt, haalt dubbele weg, sorteert op lachen en likes en leest de beste drie voor.</p>
+      <div class="grid">
+        <div class="card"><h3>Populairste</h3><p>Gesorteerd op likes.</p></div>
+        <div class="card"><h3>Grappigste</h3><p>Lachen en emoji’s in het Nederlands, Engels en Spaans.</p></div>
+        <div class="card"><h3>Over een onderwerp</h3><p>‘Lees de reacties over de gitarist’.</p></div>
+      </div>
+    </div>
+  </section>
+  <section class="block" aria-labelledby="nl-privacy">
+    <div class="wrap">
+      <h2 id="nl-privacy">Privacy zonder kleine lettertjes</h2>
+      <ul class="checks">
+        <li>Geen accounts, geen analytics, geen advertenties en geen eigen servers.</li>
+        <li>Luistert alleen als je op de microfoon tikt. Leest het scherm alleen bij een opdracht.</li>
+        <li>Het actielogboek blijft op je telefoon en kun je wissen.</li>
+        <li>Het cloudbrein is optioneel, met je eigen sleutel, en staat standaard uit.</li>
+      </ul>
+    </div>
+  </section>
+  <section class="block alt" id="nl-install" aria-labelledby="nl-inst">
+    <div class="wrap">
+      <h2 id="nl-inst">Installeren in 4 stappen</h2>
+      <ol class="steps">
+        <li>Download <strong>voz-demo.apk</strong> van de releasepagina.</li>
+        <li>Sta de installatie toe als Android erom vraagt.</li>
+        <li>Android 13 en hoger: Instellingen → Apps → VOZ → ⋮ → <strong>Beperkte instellingen toestaan</strong>.</li>
+        <li>Instellingen → Toegankelijkheid → <strong>VOZ spraakbediening</strong> → Aan. Open VOZ en volg de 4 stappen.</li>
+      </ol>
+      <p class="note">Demoversie, ondertekend als debug-build. Nog niet in Google Play.</p>
+    </div>
+  </section>
+</div>
+
+<!-- ============================ ENGLISH (default) ============================ -->
+<div id="en" class="lang-section" lang="en">
+  <section class="hero" aria-labelledby="en-title">
+    <div class="hero-inner">
+      <div>
+        <h1 id="en-title">Talk to your phone. VOZ does the taps.</h1>
+        <p class="lead">Voice control for Android, built first for blind and motor-impaired people. Works offline, open source.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="https://github.com/abrahamhl/voz/releases/latest">Download demo APK</a>
+          <a class="btn btn-ghost" href="#install">How to install</a>
+        </div>
+      </div>
+      <div class="phone" aria-hidden="true">
+        <div class="bubble-say">“Read the funniest comments”</div>
+        <div class="bubble-voz">Comment 1. Likes: 1,234. “I’m dead, that cat 😂”</div>
+        <div class="mic"><svg viewBox="0 0 24 24"><path fill="#fff" d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg></div>
+      </div>
+    </div>
+  </section>
+  <section class="block" id="how" aria-labelledby="en-how">
+    <div class="wrap">
+      <h2 id="en-how">How it works</h2>
+      <p class="intro">Screen readers made phones usable without sight, but every task is still dozens of gestures. VOZ adds the missing layer: you say what you want, VOZ does the taps.</p>
+      <div class="grid">
+        <div class="card"><div class="num" aria-hidden="true">1</div><h3>Say it</h3><p>Tap the floating mic or the accessibility button and speak in English, Spanish or Dutch.</p></div>
+        <div class="card"><div class="num" aria-hidden="true">2</div><h3>VOZ does it</h3><p>Opens apps, presses buttons by their name, scrolls, types and reads the screen aloud.</p></div>
+        <div class="card"><div class="num" aria-hidden="true">3</div><h3>It asks first</h3><p>Send, pay, buy, delete, call or transfer always need a spoken “yes”. Say “stop” and everything halts.</p></div>
+      </div>
+    </div>
+  </section>
+  <section class="block alt" id="commands" aria-labelledby="en-cmds">
+    <div class="wrap">
+      <h2 id="en-cmds">Try saying</h2>
+      <ul class="cmds">
+        <li><q>Open WhatsApp</q><span>Opens any installed app</span></li>
+        <li><q>Search cats on YouTube</q><span>YouTube, Google, Maps or Play Store</span></li>
+        <li><q>Read the screen</q><span>Tells you what is visible</span></li>
+        <li><q>Tap Subscribe</q><span>Presses a button by its text</span></li>
+        <li><q>Type I’m on my way</q><span>Types into the active field</span></li>
+        <li><q>Scroll down</q> · <q>Go back</q> · <q>Go home</q><span>Hands-free navigation</span></li>
+      </ul>
+    </div>
+  </section>
+  <section class="block wow" aria-labelledby="en-wow">
+    <div class="wrap">
+      <h2 id="en-wow">The wow moment: YouTube comments</h2>
+      <p class="intro">“Read the funniest comments.” VOZ opens the comments, scrolls, removes duplicates, ranks by laughter and likes, and reads you the top three.</p>
+      <div class="grid">
+        <div class="card"><h3>Most popular</h3><p>Ranked by likes.</p></div>
+        <div class="card"><h3>Funniest</h3><p>Laughter and emoji in English, Spanish and Dutch.</p></div>
+        <div class="card"><h3>About a topic</h3><p>“Read comments about the ending.”</p></div>
+      </div>
+    </div>
+  </section>
+  <section class="block" id="privacy" aria-labelledby="en-privacy">
+    <div class="wrap">
+      <h2 id="en-privacy">Privacy without small print</h2>
+      <ul class="checks">
+        <li>No accounts, no analytics, no ads and no servers of our own.</li>
+        <li>Listens only when you tap the mic. Reads the screen only when you give a command.</li>
+        <li>The action log stays on your phone and you can clear it.</li>
+        <li>The cloud brain is optional, uses your own key, and ships switched off.</li>
+      </ul>
+      <p class="note"><a href="PRIVACY.md">Read the full privacy notice</a> · <a href="ARCHITECTURE.md">How it is built</a></p>
+    </div>
+  </section>
+  <section class="block alt" id="install" aria-labelledby="en-inst">
+    <div class="wrap">
+      <h2 id="en-inst">Install in 4 steps</h2>
+      <ol class="steps">
+        <li>Download <strong>voz-demo.apk</strong> from the releases page.</li>
+        <li>Allow the install when Android asks.</li>
+        <li>Android 13 and later: Settings → Apps → VOZ → ⋮ → <strong>Allow restricted settings</strong>.</li>
+        <li>Settings → Accessibility → <strong>VOZ voice control</strong> → On. Open VOZ and follow the 4 steps.</li>
+      </ol>
+      <p class="note">Debug-signed demo build. Not on Google Play yet.</p>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>VOZ · Apache License 2.0 · © 2026 Abraham Haddioui (AUXDESIGN)</p>
+    <nav aria-label="Documents">
+      <a href="PRIVACY.md">Privacy</a>
+      <a href="ARCHITECTURE.md">Architecture</a>
+      <a href="PITCH.md">Pitch</a>
+      <a href="https://github.com/abrahamhl/voz">Source</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>
