@@ -129,5 +129,9 @@
     <string name="say_comment">Comment %1$d. %2$s</string>
     <string name="say_scroll_failed">I can’t scroll here.</string>
     <string name="say_action_failed">That didn’t work.</string>
+    <string name="say_ambiguous">I can see %1$d “%2$s” and can’t tell which one. Tap it yourself, or scroll until only one is visible.</string>
+    <string name="say_screen_changed">The screen changed while you answered. I didn’t tap anything.</string>
+    <string name="say_which_field">There are %1$d text fields and none is selected. Tap the one you want first.</string>
+    <string name="say_cloud_reply">Gemini says: %1$s</string>
     <string name="confirm_tap">tap %1$s</string>
 </resources>

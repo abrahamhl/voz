@@ -1,6 +1,7 @@
 package dev.auxdesign.voz.a11y
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -99,10 +100,66 @@ class NodeFinderTest {
     }
 
     @Test
-    fun `prefers the focused editable field`() {
-        assertSame(focusedField, NodeFinder.focusedEditable(root))
+    fun `prefers the focused editable field, else the only one`() {
+        assertSame(focusedField, (NodeFinder.editTarget(root) as NodeFinder.EditTarget.Found).node)
         val noFocus = FakeNode(children = listOf(field))
-        assertSame(field, NodeFinder.focusedEditable(noFocus))
+        assertSame(field, (NodeFinder.editTarget(noFocus) as NodeFinder.EditTarget.Found).node)
+        assertEquals(NodeFinder.EditTarget.None, NodeFinder.editTarget(FakeNode(children = listOf(FakeNode(text = "Hola")))))
+    }
+
+    @Test
+    fun `two fields and none focused is ambiguous, never the first one`() {
+        val login = FakeNode(
+            children = listOf(
+                FakeNode(text = "Email", isEditable = true, isShowingHint = true, bounds = Box(0, 0, 100, 50)),
+                FakeNode(text = "Password", isEditable = true, isShowingHint = true, isPassword = true, bounds = Box(0, 60, 100, 110)),
+            ),
+        )
+        assertEquals(NodeFinder.EditTarget.Ambiguous(2), NodeFinder.editTarget(login))
+    }
+
+    private fun row(title: String, top: Int) = FakeNode(
+        bounds = Box(0, top, 1000, top + 100),
+        children = listOf(
+            FakeNode(text = title, bounds = Box(0, top, 800, top + 100)),
+            FakeNode(description = "Eliminar", isClickable = true, bounds = Box(800, top, 1000, top + 100)),
+        ),
+    )
+
+    @Test
+    fun `one Eliminar per row is ambiguous`() {
+        val cart = FakeNode(children = listOf(row("Auriculares", 0), row("Cargador", 100)))
+        val result = NodeFinder.resolveTap(cart, "eliminar")
+        val ambiguous = assertInstanceOf(NodeFinder.TapResolution.Ambiguous::class.java, result)
+        assertEquals(2, ambiguous.count)
+    }
+
+    @Test
+    fun `the same button reached through its text and its description is not ambiguous`() {
+        val label = FakeNode(text = "Enviar", bounds = Box(0, 0, 50, 50))
+        val button = FakeNode(description = "Enviar", isClickable = true, bounds = Box(0, 0, 100, 50), children = listOf(label))
+        val header = FakeNode(text = "Enviar", bounds = Box(0, 200, 300, 250))
+        val result = NodeFinder.resolveTap(FakeNode(children = listOf(header, button)), "enviar")
+        val found = assertInstanceOf(NodeFinder.TapResolution.Found::class.java, result)
+        assertSame(button, found.target.pressed)
+    }
+
+    @Test
+    fun `after the spoken yes the target is pressed only if the screen still shows it`() {
+        val before = FakeNode(children = listOf(row("Auriculares", 0)))
+        val confirmed = (NodeFinder.resolveTap(before, "eliminar") as NodeFinder.TapResolution.Found).target
+
+        val unchanged = FakeNode(children = listOf(row("Auriculares", 0)))
+        assertEquals(confirmed.bounds, NodeFinder.recheck(confirmed, unchanged, "eliminar")?.bounds)
+
+        // While the user answered, a row was added, the list scrolled, or the button changed.
+        val moved = FakeNode(children = listOf(row("Cargador", 0), row("Auriculares", 100)))
+        assertNull(NodeFinder.recheck(confirmed, moved, "eliminar"))
+        val shifted = FakeNode(children = listOf(row("Auriculares", 300)))
+        assertNull(NodeFinder.recheck(confirmed, shifted, "eliminar"))
+        val relabelled = FakeNode(children = listOf(FakeNode(description = "Eliminar cuenta", isClickable = true, bounds = confirmed.bounds)))
+        assertNull(NodeFinder.recheck(confirmed, relabelled, "eliminar"))
+        assertNull(NodeFinder.recheck(confirmed, null, "eliminar"))
     }
 
     @Test

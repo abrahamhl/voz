@@ -11,6 +11,7 @@ import dev.auxdesign.voz.core.model.Plan
 import dev.auxdesign.voz.core.model.PlanSource
 import dev.auxdesign.voz.core.model.Utterance
 import dev.auxdesign.voz.core.route.Router
+import dev.auxdesign.voz.core.safety.CloudReply
 import dev.auxdesign.voz.core.safety.ConfirmationReply
 import dev.auxdesign.voz.data.ActionLog
 import dev.auxdesign.voz.data.InstalledApps
@@ -182,14 +183,20 @@ class VoiceSession(
                 }
             }
         }
-        if (plan.source == PlanSource.CLOUD) plan.say?.let { say(lang, it) }
+        if (plan.source == PlanSource.CLOUD && plan.say != null) {
+            // Screen text can steer the cloud reply: speak it only if plain, and never in VOZ's own voice.
+            val reply = CloudReply.speakable(plan.say)
+            if (reply != null) say(lang, strings.get(lang, R.string.say_cloud_reply, reply)) else log.add(LogEntry.Kind.BLOCKED, "cloud reply withheld")
+        }
     }
 
     /** Asks "¿Confirmo?" and listens for yes/no (twice at most). Anything unclear means no. */
     private suspend fun confirm(lang: Lang, what: String): Boolean {
         repeat(CONFIRM_ATTEMPTS) { attempt ->
             phaseState.value = Phase.CONFIRMING
-            if (attempt == 0) say(lang, strings.get(lang, R.string.say_confirm, what)) else say(lang, R.string.say_confirm_again)
+            val asked = if (attempt == 0) say(lang, strings.get(lang, R.string.say_confirm, what)) else say(lang, R.string.say_confirm_again)
+            // A "sí" to a question the user never heard is not consent.
+            if (!asked) return false
             phaseState.value = Phase.CONFIRMING
             earcons.start()
             val result = speech.listen(lang)
@@ -207,12 +214,16 @@ class VoiceSession(
         return false
     }
 
-    private suspend fun say(lang: Lang, @StringRes id: Int) = say(lang, strings.get(lang, id))
+    private suspend fun say(lang: Lang, @StringRes id: Int): Boolean = say(lang, strings.get(lang, id))
 
-    private suspend fun say(lang: Lang, text: String) {
+    /** Speaks and shows [text]. False if speech output failed (an error tone plays instead; text stays on screen). */
+    private suspend fun say(lang: Lang, text: String): Boolean {
         phaseState.value = Phase.SPEAKING
         replyState.value = text
-        tts.speak(text, lang, current().speechRate)
+        if (tts.speak(text, lang, current().speechRate)) return true
+        earcons.error()
+        log.add(LogEntry.Kind.FAILED, "speech output unavailable")
+        return false
     }
 
     private fun describe(plan: Plan): String = plan.steps.joinToString(" → ") { describe(it) } + " [${plan.source.name.lowercase()}]"

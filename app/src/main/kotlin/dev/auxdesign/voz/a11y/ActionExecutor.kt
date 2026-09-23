@@ -163,31 +163,43 @@ class ActionExecutor(
     private suspend fun tap(label: String, env: ExecEnv): ExecResult {
         val svc = service ?: return needAccessibility(env)
         val root = svc.root() ?: return fail(env, R.string.say_not_found, label)
-        val hit = NodeFinder.findByLabel(root, label) ?: return fail(env, R.string.say_not_found, label)
-        val clickable = NodeFinder.clickableAncestor(hit.node)
+        var target = when (val r = NodeFinder.resolveTap(root, label)) {
+            NodeFinder.TapResolution.NotFound -> return fail(env, R.string.say_not_found, label)
+            is NodeFinder.TapResolution.Found -> r.target
+            is NodeFinder.TapResolution.Ambiguous -> {
+                // One "Eliminar" per row: never guess the row for anything that needs a "sí".
+                if (env.confirmedTarget != null || r.target.labels.any(detector::isSensitive)) {
+                    return fail(env, R.string.say_ambiguous, r.count, r.target.hit.label)
+                }
+                r.target
+            }
+        }
         // Check what will really be pressed (matched text and the clickable container), not what the user said:
         // "borrar" may match "Borrar cuenta", and a harmless label may sit inside a "Pay" button.
-        val pressedLabels = listOfNotNull(hit.label, clickable?.text, clickable?.description)
-            .map { Normalize.collapse(it) }
-            .filter { it.isNotBlank() }
-            .distinct()
-        val risky = pressedLabels.filter { detector.isSensitive(it) }
+        val risky = target.labels.filter { detector.isSensitive(it) }
         val confirmed = env.confirmedTarget?.let(Normalize::forMatch)
         if (risky.isNotEmpty() && risky.any { Normalize.forMatch(it) != confirmed }) {
             if (!env.confirm(strings.get(env.lang, R.string.confirm_tap, risky.first()))) return cancelled(env)
+            // The answer took seconds: press only if the fresh screen still shows what was confirmed.
+            target = NodeFinder.recheck(target, service?.root(), label) ?: return fail(env, R.string.say_screen_changed)
         }
+        val clickable = target.pressed
         val pressed = if (clickable != null) {
             clickable.click()
         } else {
             // Nothing clickable in the tree (e.g. web content): tap the label's own position in this fresh window.
-            svc.tapAt(hit.node.bounds.centerX, hit.node.bounds.centerY)
+            svc.tapAt(target.hit.node.bounds.centerX, target.hit.node.bounds.centerY)
         }
-        return if (pressed) done(env, R.string.say_tapped, hit.label) else fail(env, R.string.say_action_failed)
+        return if (pressed) done(env, R.string.say_tapped, target.hit.label) else fail(env, R.string.say_action_failed)
     }
 
     private fun type(text: String, env: ExecEnv): ExecResult {
         val svc = service ?: return needAccessibility(env)
-        val field = svc.root()?.let { NodeFinder.focusedEditable(it) } ?: return fail(env, R.string.say_no_field)
+        val field = when (val t = svc.root()?.let { NodeFinder.editTarget(it) } ?: NodeFinder.EditTarget.None) {
+            is NodeFinder.EditTarget.Found -> t.node
+            is NodeFinder.EditTarget.Ambiguous -> return fail(env, R.string.say_which_field, t.count)
+            NodeFinder.EditTarget.None -> return fail(env, R.string.say_no_field)
+        }
         // Password fields expose masked dots as text: always replace, never append.
         val existing = if (field.isShowingHint || field.isPassword) null else field.text
         val value = if (existing.isNullOrBlank()) text else "$existing $text"

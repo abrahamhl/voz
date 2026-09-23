@@ -113,5 +113,9 @@
     <string name="say_comment">Reactie %1$d. %2$s</string>
     <string name="say_scroll_failed">Hier kan ik niet scrollen.</string>
     <string name="say_action_failed">Dat lukte niet.</string>
+    <string name="say_ambiguous">Ik zie %1$d keer ‘%2$s’ en weet niet welke. Tik er zelf op of scrol tot er maar één te zien is.</string>
+    <string name="say_screen_changed">Het scherm veranderde terwijl je antwoordde. Ik heb niets aangetikt.</string>
+    <string name="say_which_field">Er zijn %1$d tekstvelden en geen enkel is geselecteerd. Tik eerst op het veld dat je wilt.</string>
+    <string name="say_cloud_reply">Gemini zegt: %1$s</string>
     <string name="confirm_tap">op ‘%1$s’ tikken</string>
 </resources>

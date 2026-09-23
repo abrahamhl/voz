@@ -29,11 +29,19 @@ class PlanValidator(private val detector: SensitiveTargetDetector = SensitiveTar
         plan.steps.forEachIndexed { i, action -> checkAction(i, action, plan.source, utterance, errors) }
         if (errors.isNotEmpty()) return Result.Invalid(errors)
 
+        val said = Normalize.forMatch(utterance?.text.orEmpty())
         val confirmations = plan.steps.mapIndexedNotNull { i, action ->
             val target = sensitiveText(action) ?: return@mapIndexedNotNull null
-            detector.find(target)?.let { Confirmation(i, target, it) }
+            detector.find(target)?.let { return@mapIndexedNotNull Confirmation(i, target, it) }
+            // Screen text can steer the cloud planner to any button: it may only press unasked what the user named.
+            if (plan.source == PlanSource.CLOUD && !named(target, said)) Confirmation(i, target, NOT_SAID) else null
         }
         return Result.Valid(plan, confirmations)
+    }
+
+    private fun named(label: String, said: String): Boolean {
+        val l = Normalize.forMatch(label)
+        return l.isNotEmpty() && " $l " in " $said "
     }
 
     private fun checkAction(i: Int, a: Action, source: PlanSource, utterance: Utterance?, errors: MutableList<String>) {
@@ -74,6 +82,8 @@ class PlanValidator(private val detector: SensitiveTargetDetector = SensitiveTar
     }
 
     companion object {
+        /** [Confirmation.term] for a cloud tap whose label the user never said. */
+        const val NOT_SAID = "not said by the user"
         const val MAX_STEPS = 5
         const val MAX_LABEL = 80
         const val MAX_QUERY = 200

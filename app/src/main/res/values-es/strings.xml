@@ -113,5 +113,9 @@
     <string name="say_comment">Comentario %1$d. %2$s</string>
     <string name="say_scroll_failed">Aquí no puedo desplazarme.</string>
     <string name="say_action_failed">No ha funcionado.</string>
+    <string name="say_ambiguous">Veo %1$d «%2$s» y no sé cuál. Tócalo tú o desplázate hasta que solo se vea uno.</string>
+    <string name="say_screen_changed">La pantalla cambió mientras respondías. No he pulsado nada.</string>
+    <string name="say_which_field">Hay %1$d campos de texto y ninguno está seleccionado. Toca primero el que quieras.</string>
+    <string name="say_cloud_reply">Gemini dice: %1$s</string>
     <string name="confirm_tap">pulsar «%1$s»</string>
 </resources>
