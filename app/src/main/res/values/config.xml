@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        The Gemini cloud brain is a developer and pilot feature. Google's Gemini API terms allow only
+        professional use by adults, and only paid keys for users in the EEA, Switzerland and the UK, so
+        release builds leave it out (see src/release/res/values/config.xml).
+    -->
+    <bool name="cloud_brain_available">true</bool>
+</resources>

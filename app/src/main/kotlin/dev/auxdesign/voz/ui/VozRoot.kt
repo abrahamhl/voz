@@ -66,7 +66,7 @@ fun VozRoot(graph: AppGraph) {
                         onAbout = { screen = Screen.ABOUT },
                     )
                     Screen.LOG -> ActionLogScreen(graph) { screen = Screen.HOME }
-                    Screen.ABOUT -> AboutScreen { screen = Screen.SETTINGS }
+                    Screen.ABOUT -> AboutScreen(cloudBuilt = graph.engines.cloudBuilt) { screen = Screen.SETTINGS }
                 }
             }
         }

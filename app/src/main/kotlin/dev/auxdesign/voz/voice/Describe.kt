@@ -16,7 +16,7 @@ class ActionText(private val strings: Strings) {
 
     fun describe(action: Action, lang: Lang): String = when (action) {
         is Action.OpenApp -> get(lang, R.string.intent_open_app, action.app)
-        is Action.Search -> get(lang, R.string.intent_search, action.query, target(lang, action.target))
+        is Action.Search -> get(lang, R.string.intent_search, action.query, targetName(lang, action.target))
         is Action.Global -> get(
             lang,
             when (action.kind) {
@@ -48,7 +48,7 @@ class ActionText(private val strings: Strings) {
     fun source(source: PlanSource, lang: Lang): String =
         get(lang, if (source == PlanSource.CLOUD) R.string.source_cloud else R.string.source_phone)
 
-    private fun target(lang: Lang, target: SearchTarget): String = get(
+    fun targetName(lang: Lang, target: SearchTarget): String = get(
         lang,
         when (target) {
             SearchTarget.YOUTUBE -> R.string.target_youtube

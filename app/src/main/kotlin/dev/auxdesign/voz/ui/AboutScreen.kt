@@ -22,7 +22,7 @@ import dev.auxdesign.voz.R
 
 /** What VOZ does, what stays on the phone, what may leave it, and why each permission exists. */
 @Composable
-fun AboutScreen(onBack: () -> Unit) {
+fun AboutScreen(cloudBuilt: Boolean, onBack: () -> Unit) {
     val context = LocalContext.current
     val version = remember(context) {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?"
@@ -40,7 +40,7 @@ fun AboutScreen(onBack: () -> Unit) {
         Section(R.string.about_what_title, R.string.about_what_body)
         Section(R.string.about_phone_title, R.string.about_phone_body)
         Section(R.string.about_speech_title, R.string.about_speech_body)
-        Section(R.string.about_cloud_title, R.string.about_cloud_body)
+        Section(R.string.about_cloud_title, if (cloudBuilt) R.string.about_cloud_body else R.string.about_cloud_body_off)
         SectionHeading(stringResource(R.string.about_permissions_title))
         listOf(R.string.about_perm_mic, R.string.about_perm_a11y, R.string.about_perm_overlay, R.string.about_perm_notif)
             .forEach { Body(stringResource(it)) }

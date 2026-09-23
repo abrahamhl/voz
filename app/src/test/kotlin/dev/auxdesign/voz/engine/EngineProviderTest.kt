@@ -31,4 +31,11 @@ class EngineProviderTest {
     fun `no cloud without the accepted privacy notice`() {
         assertEquals(listOf("local"), provider.planners(VozSettings(cloudEnabled = true)).map { it.id })
     }
+
+    @Test
+    fun `release builds never ask the cloud, whatever the settings say`() {
+        val release = EngineProvider(LocalEngine(), JevEngine(), cloudBuilt = false) { Cloud }
+        val allowed = VozSettings(cloudEnabled = true, cloudConsent = VozSettings.CLOUD_CONSENT_VERSION)
+        assertEquals(listOf("local"), release.planners(allowed).map { it.id })
+    }
 }
