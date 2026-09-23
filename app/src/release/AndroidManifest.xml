@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Release builds have no cloud brain, so they don't need the network at all: removing the permission makes
+    "nothing leaves the phone" a guarantee Android enforces, not a promise. Search results open in the browser,
+    which has its own network access. CI checks the release APK for this.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission
+        android:name="android.permission.INTERNET"
+        tools:node="remove" />
+</manifest>

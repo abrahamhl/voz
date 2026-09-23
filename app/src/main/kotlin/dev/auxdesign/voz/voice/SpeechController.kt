@@ -10,6 +10,7 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import dev.auxdesign.voz.core.model.Lang
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,8 +48,13 @@ class SpeechController(private val context: Context, private val focus: AudioFoc
 
     /** Listens once. [onReady] runs when the mic is really open (the moment to play the start earcon). */
     suspend fun listen(lang: Lang, onReady: () -> Unit = {}): Result {
-        val first = listenOnce(lang, preferOffline = true, onReady)
-        return if (first is Result.Error && first.code in OFFLINE_RETRY) listenOnce(lang, preferOffline = false, onReady) else first
+        var result = listenOnce(lang, preferOffline = true, onReady)
+        // Another app (e.g. keyboard voice typing) held the recognizer, or it was still shutting down: once more.
+        if (result is Result.Error && result.code in BUSY_RETRY) {
+            delay(BUSY_RETRY_MS)
+            result = listenOnce(lang, preferOffline = true, onReady)
+        }
+        return if (result is Result.Error && result.code in OFFLINE_RETRY) listenOnce(lang, preferOffline = false, onReady) else result
     }
 
     fun cancel() {
@@ -147,5 +153,9 @@ class SpeechController(private val context: Context, private val focus: AudioFoc
 
         // SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED / ERROR_LANGUAGE_UNAVAILABLE (API 31) and network errors.
         private val OFFLINE_RETRY = setOf(12, 13, SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_SERVER)
+
+        // TODO(verify) on device which engines report busy vs client for a recognizer held by another app.
+        private val BUSY_RETRY = setOf(SpeechRecognizer.ERROR_RECOGNIZER_BUSY, SpeechRecognizer.ERROR_CLIENT)
+        private const val BUSY_RETRY_MS = 400L
     }
 }

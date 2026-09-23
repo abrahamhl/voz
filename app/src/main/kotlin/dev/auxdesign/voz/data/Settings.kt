@@ -45,7 +45,7 @@ data class VozSettings(
         const val MAX_COMMENT_DEPTH = 15
         const val MIN_RATE = 0.5f
         const val MAX_RATE = 2.0f
-        const val CLOUD_CONSENT_VERSION = 1
+        const val CLOUD_CONSENT_VERSION = 2
     }
 }
 

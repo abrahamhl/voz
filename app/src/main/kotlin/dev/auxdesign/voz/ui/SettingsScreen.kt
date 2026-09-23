@@ -109,48 +109,20 @@ fun SettingsScreen(graph: AppGraph, settings: VozSettings, onBack: () -> Unit, o
             onChange = { on -> update { it.copy(highContrast = on) } },
         )
 
-        SectionHeading(stringResource(R.string.settings_group_cloud))
-        val keySaved = hasKey == true
-        SwitchRow(
-            label = stringResource(R.string.settings_cloud),
-            description = stringResource(
-                when {
-                    !keySaved -> R.string.settings_cloud_no_key
-                    settings.cloudAllowed -> R.string.settings_cloud_on_status
-                    else -> R.string.settings_cloud_off_status
+        if (graph.engines.cloudBuilt) {
+            CloudGroup(
+                settings = settings,
+                hasKey = hasKey,
+                keyInput = keyInput,
+                onKeyInput = { keyInput = it },
+                onAskConsent = { askConsent = true },
+                onAskDelete = { askDeleteKey = true },
+                onSave = { key ->
+                    keyInput = ""
+                    scope.launch { hasKey = withContext(Dispatchers.IO) { graph.secrets.put(SecretStore.GEMINI_API_KEY, key) } }
                 },
-            ),
-            checked = settings.cloudAllowed && keySaved,
-            enabled = keySaved,
-            onChange = { on ->
-                when {
-                    !on -> update { it.copy(cloudEnabled = false) }
-                    settings.cloudConsent >= VozSettings.CLOUD_CONSENT_VERSION -> update { it.copy(cloudEnabled = true) }
-                    else -> askConsent = true
-                }
-            },
-        )
-        when (hasKey) {
-            true -> {
-                Text(stringResource(R.string.settings_key_saved), style = MaterialTheme.typography.bodyMedium)
-                OutlinedButton(onClick = { askDeleteKey = true }, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.settings_key_delete), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelLarge)
-                }
-            }
-            false -> {
-                Text(stringResource(R.string.settings_key_how), style = MaterialTheme.typography.bodyMedium)
-                ApiKeyField(value = keyInput, onChange = { keyInput = it })
-                Button(
-                    onClick = {
-                        val key = keyInput.trim()
-                        keyInput = ""
-                        scope.launch { hasKey = withContext(Dispatchers.IO) { graph.secrets.put(SecretStore.GEMINI_API_KEY, key) } }
-                    },
-                    enabled = keyInput.isNotBlank(),
-                    modifier = Modifier.heightIn(min = 48.dp),
-                ) { Text(stringResource(R.string.onb_btn_save_key), style = MaterialTheme.typography.labelLarge) }
-            }
-            null -> Unit
+                update = { transform -> update(transform) },
+            )
         }
 
         SectionHeading(stringResource(R.string.settings_group_more))
@@ -185,6 +157,60 @@ fun SettingsScreen(graph: AppGraph, settings: VozSettings, onBack: () -> Unit, o
             },
             dismissButton = { TextButton(onClick = { askDeleteKey = false }) { Text(stringResource(R.string.settings_key_keep)) } },
         )
+    }
+}
+
+/** Developer and pilot builds only (Gemini API terms: professional use, adults, paid keys in Europe). */
+@Composable
+private fun CloudGroup(
+    settings: VozSettings,
+    hasKey: Boolean?,
+    keyInput: String,
+    onKeyInput: (String) -> Unit,
+    onAskConsent: () -> Unit,
+    onAskDelete: () -> Unit,
+    onSave: (String) -> Unit,
+    update: ((VozSettings) -> VozSettings) -> Unit,
+) {
+    SectionHeading(stringResource(R.string.settings_group_cloud))
+    Text(stringResource(R.string.settings_cloud_pilot), style = MaterialTheme.typography.bodyMedium)
+    val keySaved = hasKey == true
+    SwitchRow(
+        label = stringResource(R.string.settings_cloud),
+        description = stringResource(
+            when {
+                !keySaved -> R.string.settings_cloud_no_key
+                settings.cloudAllowed -> R.string.settings_cloud_on_status
+                else -> R.string.settings_cloud_off_status
+            },
+        ),
+        checked = settings.cloudAllowed && keySaved,
+        enabled = keySaved,
+        onChange = { on ->
+            when {
+                !on -> update { it.copy(cloudEnabled = false) }
+                settings.cloudConsent >= VozSettings.CLOUD_CONSENT_VERSION -> update { it.copy(cloudEnabled = true) }
+                else -> onAskConsent()
+            }
+        },
+    )
+    when (hasKey) {
+        true -> {
+            Text(stringResource(R.string.settings_key_saved), style = MaterialTheme.typography.bodyMedium)
+            OutlinedButton(onClick = onAskDelete, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.settings_key_delete), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelLarge)
+            }
+        }
+        false -> {
+            Text(stringResource(R.string.settings_key_how), style = MaterialTheme.typography.bodyMedium)
+            ApiKeyField(value = keyInput, onChange = onKeyInput)
+            Button(
+                onClick = { onSave(keyInput.trim()) },
+                enabled = keyInput.isNotBlank(),
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) { Text(stringResource(R.string.onb_btn_save_key), style = MaterialTheme.typography.labelLarge) }
+        }
+        null -> Unit
     }
 }
 

@@ -14,7 +14,7 @@
 
     <!-- Accessibility service -->
     <string name="a11y_service_label">VOZ voice control</string>
-    <string name="a11y_service_description">VOZ reads the screen and acts on it only when you give a voice command: open apps, search, tap buttons, scroll, type and read comments. No accounts, no analytics, no servers of its own. Your phone’s speech service turns your voice into text; the optional cloud brain is off unless you turn it on.</string>
+    <string name="a11y_service_description">VOZ reads the screen and acts on it only when you give a voice command: open apps, search, tap buttons, scroll, type and read comments. No accounts, no analytics, no servers of its own. Your phone’s speech service turns your voice into text.</string>
 
     <!-- Floating mic -->
     <string name="notif_channel_name">Floating microphone</string>
@@ -53,7 +53,7 @@
     <string name="onb_body_mic">VOZ only listens after you tap the mic, and stops when you tap it again. Your phone’s speech service turns your voice into text.</string>
     <string name="onb_btn_mic">Allow microphone</string>
     <string name="onb_title_a11y">Accessibility service</string>
-    <string name="onb_body_a11y">VOZ needs its accessibility service to read the screen and to tap, scroll and type for you. It only acts when you ask.</string>
+    <string name="onb_body_a11y">VOZ needs its accessibility service to read the text on the screen and to tap, scroll and type for you. It reads the screen only when you give a command, keeps nothing of what it reads, and sends none of it anywhere unless you turn on a cloud feature yourself.</string>
     <string name="onb_a11y_warning">Android will warn that VOZ can take full control of your phone. Every screen reader and voice-control app gets this warning. VOZ only acts on a command you give, and asks before anything that sends, pays, deletes or calls.</string>
     <string name="onb_btn_a11y">Open accessibility settings</string>
     <string name="onb_restricted_title">Android says “Restricted setting”? (Android 13 and later)</string>
@@ -152,19 +152,20 @@
     <string name="settings_high_contrast">High contrast</string>
     <string name="settings_high_contrast_desc">White on black, with borders. Text size follows the phone setting.</string>
     <string name="settings_group_cloud">Cloud brain</string>
+    <string name="settings_cloud_pilot">Test feature for developer and pilot builds. Public versions of VOZ don’t include it.</string>
     <string name="settings_cloud">Cloud brain (Gemini)</string>
     <string name="settings_cloud_no_key">Add your own Gemini API key first.</string>
     <string name="settings_cloud_off_status">Off: everything stays on this phone.</string>
     <string name="settings_cloud_on_status">On: only commands VOZ can’t handle on the phone are sent to Google Gemini.</string>
     <string name="settings_key_saved">A key is saved on this phone, encrypted.</string>
-    <string name="settings_key_how">Get a key at aistudio.google.com. It is stored encrypted on this phone and never shown again.</string>
+    <string name="settings_key_how">Use your own paid Gemini API key from aistudio.google.com. It is stored encrypted on this phone and never shown again.</string>
     <string name="settings_key_delete">Delete key</string>
     <string name="settings_key_keep">Keep key</string>
     <string name="settings_key_delete_title">Delete the API key?</string>
     <string name="settings_key_delete_body">The cloud brain turns off until you add a key again.</string>
     <string name="consent_title">Turn on the cloud brain?</string>
     <string name="consent_what">Only commands VOZ can’t handle on the phone are sent to Google Gemini, with the text on the screen (up to 150 items). E-mail addresses, IBANs and long numbers are masked first.</string>
-    <string name="consent_who">With a free Gemini API key, Google may use what is sent to improve its products, and people may read it. Don’t use the cloud brain on banking, health or private chat screens.</string>
+    <string name="consent_who">Google’s Gemini API terms allow it only for professional use by adults (18 or older), and in the EU, the UK and Switzerland only with a paid key. With a free key, Google may use what is sent to improve its products, and people may read it. Don’t use the cloud brain on banking, health or private chat screens.</string>
     <string name="consent_never">VOZ never sends your voice, your contacts or the name of the app in front. You can turn the cloud brain off at any time.</string>
     <string name="consent_accept">Turn on</string>
     <string name="consent_decline">Keep it off</string>
@@ -209,6 +210,7 @@
     <string name="about_speech_body">Your phone’s speech service turns your voice into text. VOZ asks for on-device recognition first; if the language pack is missing, the phone’s online service may be used. Replies are spoken by your phone’s text-to-speech engine.</string>
     <string name="about_cloud_title">Cloud brain</string>
     <string name="about_cloud_body">Off by default. When you turn it on, only commands VOZ can’t handle on the phone are sent to Google Gemini, with the text on the screen, personal numbers and e-mail addresses masked. Your voice and the name of the app in front are never sent.</string>
+    <string name="about_cloud_body_off">This version has no cloud brain: everything VOZ understands and does stays on this phone.</string>
     <string name="about_permissions_title">Permissions and why</string>
     <string name="about_perm_mic">Microphone: to hear your command, only after you tap the mic.</string>
     <string name="about_perm_a11y">Accessibility service: to read the screen and tap, scroll and type when you ask.</string>
@@ -281,4 +283,5 @@
     <string name="say_which_field">There are %1$d text fields and none is selected. Tap the one you want first.</string>
     <string name="say_cloud_reply">Gemini says: %1$s</string>
     <string name="confirm_tap">tap “%1$s”</string>
+    <string name="confirm_search">search %2$s for “%1$s”</string>
 </resources>

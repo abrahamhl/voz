@@ -54,8 +54,14 @@ object NodeFinder {
      * What a tap would really press: the clickable ancestor ([pressed]; null = tap [hit]'s own bounds) and
      * [labels] = the matched text plus that container's own text and description.
      */
-    data class TapTarget(val hit: Hit, val pressed: UiNode?, val labels: List<String>) {
+    data class TapTarget(val hit: Hit, val pressed: UiNode?, val labels: List<String>, val inner: List<String> = emptyList()) {
         val bounds: Box get() = (pressed ?: hit.node).bounds
+
+        /**
+         * Everything the press may trigger: [labels] plus the texts inside the pressed container ([inner]).
+         * View-based buttons keep their text in child views, so "tap Visa" can press a "Pagar 49,99 €" row.
+         */
+        val riskLabels: List<String> get() = (labels + inner).distinct()
 
         /** Same labels at the same place. */
         fun sameAs(other: TapTarget): Boolean =
@@ -117,7 +123,36 @@ object NodeFinder {
             .map { Normalize.collapse(it) }
             .filter { it.isNotBlank() }
             .distinct()
-        return TapTarget(hit, clickable, labels)
+        return TapTarget(hit, clickable, labels, clickable?.let { innerLabels(it) }.orEmpty())
+    }
+
+    /** Texts of the visible views inside [container], bounded (a whole-screen container must not flood the check). */
+    fun innerLabels(container: UiNode, max: Int = MAX_INNER_LABELS, maxDepth: Int = MAX_INNER_DEPTH): List<String> {
+        val out = ArrayList<String>()
+        val stack = ArrayDeque<Pair<UiNode, Int>>()
+        container.children.asReversed().forEach { stack.addLast(it to 1) }
+        while (stack.isNotEmpty() && out.size < max) {
+            val (node, depth) = stack.removeLast()
+            if (!node.isVisible) continue
+            listOfNotNull(node.text, node.description).map { Normalize.collapse(it) }.filter { it.isNotBlank() }.forEach {
+                if (out.size < max) out += it
+            }
+            if (depth < maxDepth) node.children.asReversed().forEach { stack.addLast(it to depth + 1) }
+        }
+        return out.distinct()
+    }
+
+    /**
+     * Where to tap a node that has no clickable view (web content): the centre of its on-screen part.
+     * Null when nothing of it is on screen; gestures with negative coordinates are rejected by Android.
+     */
+    fun visibleCenter(bounds: Box, screenWidth: Int, screenHeight: Int): Pair<Int, Int>? {
+        val left = bounds.left.coerceAtLeast(0)
+        val top = bounds.top.coerceAtLeast(0)
+        val right = bounds.right.coerceAtMost(screenWidth)
+        val bottom = bounds.bottom.coerceAtMost(screenHeight)
+        if (right <= left || bottom <= top) return null
+        return (left + right) / 2 to (top + bottom) / 2
     }
 
     /**
@@ -225,4 +260,6 @@ object NodeFinder {
 
     private const val ACTIONABLE_BONUS = 0.01
     private const val TIE_EPSILON = 1e-9
+    private const val MAX_INNER_LABELS = 12
+    private const val MAX_INNER_DEPTH = 4
 }

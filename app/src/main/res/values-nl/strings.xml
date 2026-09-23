@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="a11y_service_label">VOZ spraakbediening</string>
-    <string name="a11y_service_description">VOZ leest het scherm en handelt alleen als je een spraakopdracht geeft: apps openen, zoeken, op knoppen tikken, scrollen, typen en reacties voorlezen. Geen accounts, geen analytics en geen eigen servers. De spraakdienst van je telefoon zet je stem om in tekst; het optionele cloudbrein staat uit tenzij je het aanzet.</string>
+    <string name="a11y_service_description">VOZ leest het scherm en handelt alleen als je een spraakopdracht geeft: apps openen, zoeken, op knoppen tikken, scrollen, typen en reacties voorlezen. Geen accounts, geen analytics en geen eigen servers. De spraakdienst van je telefoon zet je stem om in tekst.</string>
 
     <string name="notif_channel_name">Zwevende microfoon</string>
     <string name="notif_bubble_title">VOZ is gereed</string>
@@ -37,7 +37,7 @@
     <string name="onb_body_mic">VOZ luistert pas nadat je op de microfoon tikt, en stopt als je er nog een keer op tikt. De spraakdienst van je telefoon zet je stem om in tekst.</string>
     <string name="onb_btn_mic">Microfoon toestaan</string>
     <string name="onb_title_a11y">Toegankelijkheidsservice</string>
-    <string name="onb_body_a11y">VOZ heeft zijn toegankelijkheidsservice nodig om het scherm te lezen en voor jou te tikken, scrollen en typen. Het doet alleen iets als jij het vraagt.</string>
+    <string name="onb_body_a11y">VOZ heeft zijn toegankelijkheidsservice nodig om de tekst op het scherm te lezen en voor jou te tikken, scrollen en typen. Het leest het scherm alleen als je een opdracht geeft, bewaart niets van wat het leest en stuurt het nergens heen, tenzij je zelf een cloudfunctie aanzet.</string>
     <string name="onb_a11y_warning">Android waarschuwt dat VOZ volledige controle over je telefoon kan krijgen. Elke schermlezer en elke spraakbedieningsapp krijgt die waarschuwing. VOZ doet alleen iets na jouw opdracht, en vraagt het eerst voordat het iets verstuurt, betaalt, verwijdert of belt.</string>
     <string name="onb_btn_a11y">Toegankelijkheidsinstellingen openen</string>
     <string name="onb_restricted_title">Zegt Android ‘Beperkte instelling’? (Android 13 en hoger)</string>
@@ -134,19 +134,20 @@
     <string name="settings_high_contrast">Hoog contrast</string>
     <string name="settings_high_contrast_desc">Wit op zwart, met randen. De tekstgrootte volgt de instelling van de telefoon.</string>
     <string name="settings_group_cloud">Cloudbrein</string>
+    <string name="settings_cloud_pilot">Testfunctie voor ontwikkel- en pilotversies. Openbare versies van VOZ bevatten het niet.</string>
     <string name="settings_cloud">Cloudbrein (Gemini)</string>
     <string name="settings_cloud_no_key">Voeg eerst je eigen Gemini API-sleutel toe.</string>
     <string name="settings_cloud_off_status">Uit: alles blijft op deze telefoon.</string>
     <string name="settings_cloud_on_status">Aan: alleen opdrachten die VOZ niet op de telefoon kan afhandelen, gaan naar Google Gemini.</string>
     <string name="settings_key_saved">Er is een sleutel versleuteld op deze telefoon opgeslagen.</string>
-    <string name="settings_key_how">Maak een sleutel aan op aistudio.google.com. Hij wordt versleuteld op deze telefoon bewaard en niet meer getoond.</string>
+    <string name="settings_key_how">Gebruik je eigen betaalde Gemini API-sleutel van aistudio.google.com. Hij wordt versleuteld op deze telefoon bewaard en niet meer getoond.</string>
     <string name="settings_key_delete">Sleutel verwijderen</string>
     <string name="settings_key_keep">Sleutel bewaren</string>
     <string name="settings_key_delete_title">API-sleutel verwijderen?</string>
     <string name="settings_key_delete_body">Het cloudbrein gaat uit tot je weer een sleutel toevoegt.</string>
     <string name="consent_title">Cloudbrein aanzetten?</string>
     <string name="consent_what">Alleen opdrachten die VOZ niet op de telefoon kan afhandelen, gaan naar Google Gemini, met de tekst op het scherm (tot 150 onderdelen). E-mailadressen, IBAN’s en lange nummers worden eerst afgeschermd.</string>
-    <string name="consent_who">Met een gratis Gemini-sleutel mag Google wat er verstuurd wordt gebruiken om zijn producten te verbeteren, en kunnen mensen het lezen. Gebruik het cloudbrein niet op schermen van bank, gezondheid of privéchats.</string>
+    <string name="consent_who">De voorwaarden van Googles Gemini API staan alleen professioneel gebruik door volwassenen (18 jaar of ouder) toe, en in de EU, het VK en Zwitserland alleen met een betaalde sleutel. Met een gratis sleutel mag Google wat er verstuurd wordt gebruiken om zijn producten te verbeteren, en kunnen mensen het lezen. Gebruik het cloudbrein niet op schermen van bank, gezondheid of privéchats.</string>
     <string name="consent_never">VOZ verstuurt nooit je stem, je contacten of de naam van de app op de voorgrond. Je kunt het cloudbrein altijd uitzetten.</string>
     <string name="consent_accept">Aanzetten</string>
     <string name="consent_decline">Uit laten</string>
@@ -189,6 +190,7 @@
     <string name="about_speech_body">De spraakdienst van je telefoon zet je stem om in tekst. VOZ vraagt eerst om herkenning op het toestel; als het taalpakket ontbreekt, kan de onlinedienst van de telefoon worden gebruikt. Antwoorden worden uitgesproken door de tekst-naar-spraakengine van je telefoon.</string>
     <string name="about_cloud_title">Cloudbrein</string>
     <string name="about_cloud_body">Standaard uit. Als je het aanzet, gaan alleen opdrachten die VOZ niet op de telefoon kan afhandelen naar Google Gemini, met de tekst op het scherm en persoonlijke nummers en e-mailadressen afgeschermd. Je stem en de naam van de app op de voorgrond worden nooit verstuurd.</string>
+    <string name="about_cloud_body_off">Deze versie heeft geen cloudbrein: alles wat VOZ begrijpt en doet, blijft op deze telefoon.</string>
     <string name="about_permissions_title">Rechten en waarom</string>
     <string name="about_perm_mic">Microfoon: om je opdracht te horen, alleen nadat je op de microfoon tikt.</string>
     <string name="about_perm_a11y">Toegankelijkheidsservice: om het scherm te lezen en te tikken, scrollen en typen als je dat vraagt.</string>
@@ -259,4 +261,5 @@
     <string name="say_which_field">Er zijn %1$d tekstvelden en geen enkel is geselecteerd. Tik eerst op het veld dat je wilt.</string>
     <string name="say_cloud_reply">Gemini zegt: %1$s</string>
     <string name="confirm_tap">op ‘%1$s’ tikken</string>
+    <string name="confirm_search">op %2$s zoeken naar ‘%1$s’</string>
 </resources>

@@ -60,6 +60,16 @@ class PlanTest {
     }
 
     @Test
+    fun `a cloud search for text the user never said needs a spoken yes`() {
+        val said = Utterance("busca recetas de lentejas en youtube", Lang.ES)
+        val own = validator.validate(cloud(Action.Search("recetas de lentejas", SearchTarget.YOUTUBE)), said)
+        assertTrue(assertInstanceOf(PlanValidator.Result.Valid::class.java, own).confirmations.isEmpty())
+        val leaked = validator.validate(cloud(Action.Search("codigo 482913", SearchTarget.GOOGLE)), said)
+        val valid = assertInstanceOf(PlanValidator.Result.Valid::class.java, leaked)
+        assertEquals(listOf(PlanValidator.Confirmation(0, "codigo 482913", PlanValidator.NOT_SAID)), valid.confirmations)
+    }
+
+    @Test
     fun `more than five steps is rejected`() {
         val steps = List(6) { Action.Scroll(Direction.DOWN) }
         assertInstanceOf(PlanValidator.Result.Invalid::class.java, validator.validate(Plan(steps, PlanSource.CLOUD), said))

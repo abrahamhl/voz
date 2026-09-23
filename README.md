@@ -1,31 +1,42 @@
 # VOZ
 
-**Talk to your Android phone and it does the rest.** Open and search apps, hear what is on the screen, tap, scroll and type by voice, and ask YouTube for “the funniest comments”. Built first for blind and motor‑impaired people. Offline by default. Open source.
+**Voice control for Android, built for blind, low-vision and motor-impaired people.** Tap the mic (or Android’s
+accessibility button), say what you want in **Spanish, English or Dutch**, and VOZ opens apps, searches, taps buttons by
+their name, scrolls, types and reads the screen aloud. It asks before anything that sends, pays, deletes or calls.
 
-![VOZ demo: saying “read the funniest comments” on a YouTube video](docs/media/demo.gif)
+> **Status: release candidate in progress. Not yet validated on a physical phone.**
+> Every commit is compiled, linted and unit-tested in CI. Speech, TalkBack coexistence and behaviour inside real apps
+> have not been checked on a device yet. The [device validation pack](docs/DEVICE_VALIDATION.md) is how that happens.
+> Until it passes on at least two phones, treat VOZ as a pre-release.
 
-> The demo GIF is a placeholder until the first real-device recording (see [Demo script](docs/DEMO_SCRIPT.md)).
+## Why VOZ
 
-## In 30 seconds
+Android already has strong free tools: Google Voice Access (tap by visible text, hands-free start), TalkBack voice
+commands, and Gemini. VOZ doesn’t claim to replace them. It aims at the gaps a disabled user can actually hit:
 
-Phones are built for eyes and fingers. Screen readers made them usable without sight, but every task is still dozens of swipes. VOZ adds the missing layer: **say what you want, VOZ does the taps**.
+- **Dutch.** Google’s Voice Access help page does not list Dutch among its languages (checked 2026-09-23,
+  [source](https://support.google.com/accessibility/android/answer/6151848?hl=en)). VOZ understands Dutch, Spanish and
+  English commands with an offline grammar.
+- **Local first, no account.** The command grammar runs on the phone. VOZ has no accounts, no analytics and no servers.
+- **Safety by design.** Screen content is treated as hostile. A fixed list of 19 actions, a spoken or on-screen
+  confirmation before risky taps, no guessing between identical buttons, and a re-check of the screen after you say “yes”.
+- **Honest feedback.** The mic turns yellow only when it is really listening. Every result is spoken and shown with a
+  text, never with colour alone. Failures offer one clear way out.
 
-- Tap the floating mic (or the accessibility button) and speak in **Spanish, English or Dutch**.
-- A fast **offline grammar** understands everyday commands on any Android 8+ phone. No account, no server.
-- VOZ acts through Android’s accessibility service: opens apps, presses buttons by their label, scrolls, types, reads the screen aloud.
-- Anything risky (send, pay, buy, delete, call, transfer) is **confirmed out loud first**. Say “para” / “stop” / “stop maar” at any time.
-- Optional **cloud brain** (your own Google Gemini key) for free-form requests. Off unless you switch it on.
+**Known limits:** you need one tap (or the accessibility button) per command, and VOZ doesn’t listen while it is
+talking or working. To stop it, tap the mic. It works best when you say the exact name of a button.
 
-## Install in 4 steps
+## Install (demo build)
 
-1. **Download** `voz-demo.apk` from the [latest release](../../releases/latest).
+1. **Download** `voz-demo.apk` from the latest pre-release and check its SHA-256.
 2. **Allow the install** when Android asks (your browser or file manager needs “Install unknown apps”).
-3. **Android 13 and later:** open *Settings → Apps → VOZ → ⋮ (top right) → Allow restricted settings*. Android blocks accessibility services from sideloaded apps until you do this.
-4. **Turn on the service:** *Settings → Accessibility → VOZ voice control → On*. Then open VOZ; the 4-step setup checks microphone, floating mic, service and (optional) cloud key.
+3. **Open VOZ.** Setup has three steps: microphone, accessibility service, and the optional floating mic.
+4. **Android 13 and later:** when you try to turn on *VOZ voice control*, Android says “Restricted setting”. VOZ shows
+   the four steps to allow it (App info → ⋮ → Allow restricted settings → turn the service on).
 
-> This is a debug-signed **demo build**. It has not been published on Google Play.
+> This is a debug-signed demo build. It has not been published on Google Play.
 
-## Commands cheat-sheet
+## Commands
 
 | What | Español | English | Nederlands |
 |---|---|---|---|
@@ -42,46 +53,54 @@ Phones are built for eyes and fingers. Screen readers made them usable without s
 | Read the screen | «Lee la pantalla» | “Read the screen” | “Lees het scherm voor” |
 | Volume | «Sube el volumen» | “Volume up” | “Volume omhoog” |
 | Rotate | «Gira la pantalla» | “Rotate the screen” | “Draai het scherm” |
-| Full screen (YouTube) | «Pantalla completa» / «Sal de pantalla completa» | “Full screen” / “Exit full screen” | “Volledig scherm” / “Volledig scherm verlaten” |
-| Comments (YouTube) | «Lee los comentarios más populares» | “Read the top comments” | “Lees de populairste reacties” |
-| Funny comments | «Lee los comentarios más graciosos» | “Read the funniest comments” | “Lees de grappigste reacties” |
-| Comments about X | «Lee los comentarios sobre el final» | “Read comments about the ending” | “Lees de reacties over de gitarist” |
-| Stop everything | «Para» | “Stop” | “Stop maar” |
+| YouTube full screen | «Pantalla completa» | “Full screen” | “Volledig scherm” |
+| YouTube comments | «Lee los comentarios más populares» | “Read the top comments” | “Lees de populairste reacties” |
 
-Saying just an app name opens it (“WhatsApp”), and “YouTube lofi” searches inside YouTube. Saying the exact text of a visible button taps it.
+Saying just an app name opens it (“WhatsApp”), and “YouTube lofi” searches inside YouTube. The YouTube commands depend
+on labels inside the YouTube app that have not been checked on a device yet.
 
-## Privacy promise
+## Privacy
 
-- **No accounts, no analytics, no ads, no servers.** VOZ has nothing to log in to and nothing phones home.
-- Speech is turned into text by your phone’s own speech service; VOZ prefers on-device recognition when available.
-- The screen is read **only when you give a command**, and never stored. The action log stays on the phone and can be cleared.
-- The cloud brain is **off by default**. When you enable it with your own key, only commands the offline grammar did not understand are sent, with a short text-only summary of the screen (max 150 items). Comments and your key never leave the phone except that request’s key header to Google.
+- **No accounts, no analytics, no ads, no servers of our own.**
+- Your phone’s speech service turns your voice into text. VOZ asks for on-device recognition first; if the language
+  pack is missing, the phone’s online recognition may be used (that is Google’s or your phone maker’s service, not VOZ).
+- The screen is read **only when you give a command** and is not stored. The history (last 200 entries) stays on the
+  phone; dictated text is stored only as a character count. Backups and device-to-device transfer are turned off.
+- **Cloud brain (developer and pilot builds only).** Google’s Gemini API terms allow it only for professional use by
+  adults, and only with paid keys for users in the EEA, Switzerland and the UK, so public release builds leave it out. Release builds also have no internet permission at all, and CI checks this on every commit.
+  In pilot builds it is off by default and needs your own key plus an explicit consent screen. When it is on, only
+  commands VOZ can’t handle on the phone are sent, with the screen text, and e-mail addresses, IBANs and long numbers
+  masked first.
 
-Details: [Privacy](docs/PRIVACY.md) · [Security](SECURITY.md) · [Architecture](docs/ARCHITECTURE.md)
+Details: [Privacy](docs/PRIVACY.md) · [Security](SECURITY.md) · [Compliance](docs/COMPLIANCE.md) · [Architecture](docs/ARCHITECTURE.md)
 
-## Status
+## What is verified
 
-`v0.1.0-demo`. Every build is compiled, linted and unit-tested in CI (250+ tests). Behaviour on real phones (speech, TalkBack interplay, YouTube labels) still needs the manual checklist in the release notes.
-
-## Roadmap
-
-1. **Real-device hardening:** test matrix on 6 phones (Android 8–16), YouTube label packs per app version, TalkBack co-existence.
-2. **Routines and wake-free hands-free mode:** chain commands (“my morning”), long-press hardware shortcut, more apps flows (WhatsApp, Maps).
-3. **Pilots:** 2–3 disability organisations in the Netherlands and Spain; accessibility-tool review for Google Play.
+| Area | Evidence |
+|---|---|
+| Grammar, routing, validation, safety rules | JVM unit tests in CI (300+) |
+| App logic (tap resolution, confirmations, settle timing, bubble bounds, consent gate) | JVM unit tests in CI |
+| Build, lint (0 errors), secret scan | CI on every commit |
+| Speech recognition, text-to-speech, taps in real apps, TalkBack coexistence, Android 13+ install path | **Not yet verified** · [device validation pack](docs/DEVICE_VALIDATION.md) |
+| Use by disabled people | **None yet**. No user study has been run. |
 
 ## Build from source
 
-Requirements: JDK 17 and the Android SDK (API 37). Then:
+Requirements: JDK 17 and the Android SDK. Then:
 
 ```bash
 ./gradlew :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 ```
 
-The APK lands in `app/build/outputs/apk/debug/`. Modules: `:core` (pure Kotlin: grammar, routing, validation, ranking, safety) and `:app` (Android, Jetpack Compose).
+The debug APK (with the pilot-only cloud brain) lands in `app/build/outputs/apk/debug/`. Release builds leave the
+cloud brain out. Modules: `:core` (pure Kotlin: grammar, routing, validation, ranking, safety) and `:app` (Android,
+Jetpack Compose).
 
 ## More
 
-[Pitch](docs/PITCH.md) · [Business model](docs/BUSINESS_MODEL.md) · [Demo script](docs/DEMO_SCRIPT.md) · [Play accessibility declaration (draft)](docs/PLAY_ACCESSIBILITY_DECLARATION.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+[Device validation](docs/DEVICE_VALIDATION.md) · [Pitch](docs/PITCH.md) · [Business model](docs/BUSINESS_MODEL.md) ·
+[Demo script](docs/DEMO_SCRIPT.md) · [Play accessibility declaration (draft)](docs/PLAY_ACCESSIBILITY_DECLARATION.md) ·
+[Contributing](CONTRIBUTING.md) · [Code of conduct](CODE_OF_CONDUCT.md) · [Changelog](CHANGELOG.md)
 
 ## License
 

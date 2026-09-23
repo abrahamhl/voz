@@ -37,6 +37,9 @@ import dev.auxdesign.voz.voice.busy
 import dev.auxdesign.voz.voice.orbState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,6 +96,7 @@ class BubbleService : Service() {
     }
 
     override fun onDestroy() {
+        touchPassThrough = null
         scope.cancel()
         bubble?.let { runCatching { windowManager.removeView(it) } }
         bubble = null
@@ -160,6 +164,10 @@ class BubbleService : Service() {
         bubble = view
         params = p
         render(view, OrbState.IDLE)
+        touchPassThrough = { through ->
+            p.flags = if (through) p.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE else p.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+            runCatching { windowManager.updateViewLayout(view, p) }
+        }
         scope.launch {
             val session = graph.session
             combine(session.turn, session.micOpen, session.phase) { turn, micOpen, phase ->
@@ -277,6 +285,26 @@ class BubbleService : Service() {
         private const val NOTIFICATION_ID = 7
         private const val ACTION_STOP = "dev.auxdesign.voz.action.STOP_BUBBLE"
         private const val TREMOR_SLOP_FACTOR = 3
+        private const val PASS_THROUGH_SETTLE_MS = 32L
+
+        /** Set while a bubble is shown: lets touches through it (true) or not (false). */
+        @Volatile
+        private var touchPassThrough: ((Boolean) -> Unit)? = null
+
+        /**
+         * Runs an injected gesture while the bubble lets touches through, so a tap under the bubble reaches the
+         * app and never toggles VOZ itself.
+         */
+        suspend fun <T> withTouchesPassingThrough(block: suspend () -> T): T {
+            val hook = touchPassThrough ?: return block()
+            withContext(Dispatchers.Main.immediate) { hook(true) }
+            delay(PASS_THROUGH_SETTLE_MS)
+            try {
+                return block()
+            } finally {
+                withContext(NonCancellable + Dispatchers.Main.immediate) { hook(false) }
+            }
+        }
 
         private val runningState = MutableStateFlow(false)
         val running: StateFlow<Boolean> = runningState.asStateFlow()

@@ -48,12 +48,14 @@ class JevEngine : DecisionEngine {
 class EngineProvider(
     private val local: LocalEngine,
     private val jev: JevEngine,
+    /** False in builds that leave the cloud brain out (release builds). */
+    val cloudBuilt: Boolean = true,
     private val cloud: () -> DecisionEngine?,
 ) {
     fun planners(settings: VozSettings): List<DecisionEngine> = buildList {
         add(local)
         if (jev.isAvailable) add(jev)
-        if (settings.cloudAllowed) cloud()?.takeIf { it.isAvailable }?.let { add(it) }
+        if (cloudBuilt && settings.cloudAllowed) cloud()?.takeIf { it.isAvailable }?.let { add(it) }
     }
 
     /** Comment ranking always stays on the phone (comments are never uploaded). */

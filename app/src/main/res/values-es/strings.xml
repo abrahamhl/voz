@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="a11y_service_label">Control por voz VOZ</string>
-    <string name="a11y_service_description">VOZ lee la pantalla y actúa sobre ella solo cuando le das una orden de voz: abrir apps, buscar, pulsar botones, desplazarse, escribir y leer comentarios. Sin cuentas, sin analíticas y sin servidores propios. El servicio de voz de tu móvil convierte tu voz en texto; el cerebro en la nube opcional está apagado salvo que lo actives.</string>
+    <string name="a11y_service_description">VOZ lee la pantalla y actúa sobre ella solo cuando le das una orden de voz: abrir apps, buscar, pulsar botones, desplazarse, escribir y leer comentarios. Sin cuentas, sin analíticas y sin servidores propios. El servicio de voz de tu móvil convierte tu voz en texto.</string>
 
     <string name="notif_channel_name">Micrófono flotante</string>
     <string name="notif_bubble_title">VOZ está listo</string>
@@ -37,7 +37,7 @@
     <string name="onb_body_mic">VOZ solo escucha después de que toques el micrófono, y para cuando lo vuelves a tocar. El servicio de voz de tu móvil convierte tu voz en texto.</string>
     <string name="onb_btn_mic">Permitir micrófono</string>
     <string name="onb_title_a11y">Servicio de accesibilidad</string>
-    <string name="onb_body_a11y">VOZ necesita su servicio de accesibilidad para leer la pantalla y pulsar, desplazarse y escribir por ti. Solo actúa cuando se lo pides.</string>
+    <string name="onb_body_a11y">VOZ necesita su servicio de accesibilidad para leer el texto de la pantalla y pulsar, desplazarse y escribir por ti. Solo lee la pantalla cuando le das una orden, no guarda nada de lo que lee y no lo envía a ninguna parte salvo que tú actives una función en la nube.</string>
     <string name="onb_a11y_warning">Android avisará de que VOZ puede tener el control total del móvil. Todos los lectores de pantalla y apps de control por voz reciben este aviso. VOZ solo actúa cuando le das una orden, y pregunta antes de enviar, pagar, borrar o llamar.</string>
     <string name="onb_btn_a11y">Abrir ajustes de accesibilidad</string>
     <string name="onb_restricted_title">¿Android dice «Ajuste restringido»? (Android 13 y posteriores)</string>
@@ -134,19 +134,20 @@
     <string name="settings_high_contrast">Alto contraste</string>
     <string name="settings_high_contrast_desc">Blanco sobre negro, con bordes. El tamaño del texto sigue el ajuste del móvil.</string>
     <string name="settings_group_cloud">Cerebro en la nube</string>
+    <string name="settings_cloud_pilot">Función de prueba para versiones de desarrollo y piloto. Las versiones públicas de VOZ no la incluyen.</string>
     <string name="settings_cloud">Cerebro en la nube (Gemini)</string>
     <string name="settings_cloud_no_key">Primero añade tu propia clave de API de Gemini.</string>
     <string name="settings_cloud_off_status">Apagado: todo se queda en este móvil.</string>
     <string name="settings_cloud_on_status">Encendido: solo se envían a Google Gemini las órdenes que VOZ no puede resolver en el móvil.</string>
     <string name="settings_key_saved">Hay una clave guardada en este móvil, cifrada.</string>
-    <string name="settings_key_how">Consigue una clave en aistudio.google.com. Se guarda cifrada en este móvil y no se vuelve a mostrar.</string>
+    <string name="settings_key_how">Usa tu propia clave de pago de la API de Gemini de aistudio.google.com. Se guarda cifrada en este móvil y no se vuelve a mostrar.</string>
     <string name="settings_key_delete">Borrar clave</string>
     <string name="settings_key_keep">Conservar clave</string>
     <string name="settings_key_delete_title">¿Borrar la clave de API?</string>
     <string name="settings_key_delete_body">El cerebro en la nube se apaga hasta que vuelvas a añadir una clave.</string>
     <string name="consent_title">¿Activar el cerebro en la nube?</string>
     <string name="consent_what">Solo se envían a Google Gemini las órdenes que VOZ no puede resolver en el móvil, junto con el texto de la pantalla (hasta 150 elementos). Antes se ocultan correos, IBAN y números largos.</string>
-    <string name="consent_who">Con una clave gratuita de Gemini, Google puede usar lo que se envía para mejorar sus productos, y puede leerlo una persona. No uses el cerebro en la nube en pantallas de banca, salud o chats privados.</string>
+    <string name="consent_who">Los términos de la API de Gemini de Google solo permiten un uso profesional por mayores de edad (18 años o más), y en la UE, el Reino Unido y Suiza solo con una clave de pago. Con una clave gratuita, Google puede usar lo que se envía para mejorar sus productos, y puede leerlo una persona. No uses el cerebro en la nube en pantallas de banca, salud o chats privados.</string>
     <string name="consent_never">VOZ nunca envía tu voz, tus contactos ni el nombre de la app que está delante. Puedes apagarlo cuando quieras.</string>
     <string name="consent_accept">Activar</string>
     <string name="consent_decline">Dejarlo apagado</string>
@@ -189,6 +190,7 @@
     <string name="about_speech_body">El servicio de voz de tu móvil convierte tu voz en texto. VOZ pide primero reconocimiento en el propio móvil; si falta el paquete de idioma, puede usarse el servicio en línea del móvil. Las respuestas las lee el motor de texto a voz de tu móvil.</string>
     <string name="about_cloud_title">Cerebro en la nube</string>
     <string name="about_cloud_body">Apagado por defecto. Si lo activas, solo se envían a Google Gemini las órdenes que VOZ no puede resolver en el móvil, con el texto de la pantalla y los números personales y correos ocultos. Nunca se envía tu voz ni el nombre de la app que está delante.</string>
+    <string name="about_cloud_body_off">Esta versión no tiene cerebro en la nube: todo lo que VOZ entiende y hace se queda en este móvil.</string>
     <string name="about_permissions_title">Permisos y para qué sirven</string>
     <string name="about_perm_mic">Micrófono: para oír tu orden, solo después de que toques el micrófono.</string>
     <string name="about_perm_a11y">Servicio de accesibilidad: para leer la pantalla y pulsar, desplazarse y escribir cuando se lo pides.</string>
@@ -259,4 +261,5 @@
     <string name="say_which_field">Hay %1$d campos de texto y ninguno está seleccionado. Toca primero el que quieras.</string>
     <string name="say_cloud_reply">Gemini dice: %1$s</string>
     <string name="confirm_tap">pulsar «%1$s»</string>
+    <string name="confirm_search">buscar «%1$s» en %2$s</string>
 </resources>

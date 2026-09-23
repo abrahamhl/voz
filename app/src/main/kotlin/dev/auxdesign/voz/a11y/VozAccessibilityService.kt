@@ -12,6 +12,7 @@ import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import dev.auxdesign.voz.graph
+import dev.auxdesign.voz.overlay.BubbleService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,8 +43,17 @@ class VozAccessibilityService : AccessibilityService() {
         buttonCallback = callback
     }
 
+    /** Window state/content events seen so far: lets a step wait until the screen reacted. */
+    @Volatile
+    var windowEvents: Long = 0L
+        private set
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        val type = event?.eventType ?: return
+        val fromOtherApp = event.packageName?.toString() != packageName
+        // VOZ's own bubble and screens redraw too; only the app being controlled counts.
+        if (fromOtherApp && (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || type == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)) windowEvents++
+        if (type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString() ?: return
         if (pkg != packageName) foregroundPackage = pkg
     }
@@ -85,7 +95,11 @@ class VozAccessibilityService : AccessibilityService() {
         return dispatch(GestureDescription.Builder().addStroke(GestureDescription.StrokeDescription(path, 0, SWIPE_MS)).build())
     }
 
-    private suspend fun dispatch(gesture: GestureDescription): Boolean = suspendCancellableCoroutine { cont ->
+    /** Injected gestures pass through VOZ's own floating mic, so a tap under it reaches the app. */
+    private suspend fun dispatch(gesture: GestureDescription): Boolean =
+        BubbleService.withTouchesPassingThrough { dispatchNow(gesture) }
+
+    private suspend fun dispatchNow(gesture: GestureDescription): Boolean = suspendCancellableCoroutine { cont ->
         val accepted = dispatchGesture(
             gesture,
             object : AccessibilityService.GestureResultCallback() {

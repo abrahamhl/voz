@@ -26,6 +26,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,6 +49,8 @@ class VoiceSession(
     private val executor: ActionExecutor,
     private val apps: InstalledApps,
     private val log: ActionLog,
+    /** True while TalkBack (touch exploration) is on: its own speech must not become the command. */
+    private val screenReaderOn: () -> Boolean = { false },
     val text: ActionText = ActionText(strings),
 ) {
     enum class Phase { IDLE, LISTENING, WORKING, SPEAKING, CONFIRMING }
@@ -65,9 +68,12 @@ class VoiceSession(
     val speechOutput: StateFlow<Boolean> = speechOutputState.asStateFlow()
 
     private var job: Job? = null
+    // Written by the turn (main or background thread), read by the on-screen buttons on the main thread.
+    @Volatile
     private var pendingAnswer: CompletableDeferred<Boolean>? = null
 
     /** What the current turn heard, as it may be shown (dictation reduced to its length). */
+    @Volatile
     private var shownHeard: String? = null
 
     val isBusy: Boolean get() = job?.isActive == true
@@ -83,6 +89,8 @@ class VoiceSession(
         val turn = scope.launch(start = CoroutineStart.LAZY) {
             val lang = lang()
             try {
+                // TalkBack announces the tapped button; let it finish before the mic opens. TODO(verify) the delay on device.
+                if (screenReaderOn()) delay(SCREEN_READER_SETTLE_MS)
                 val texts = listen(lang) ?: return@launch
                 handle(texts, lang)
             } catch (e: CancellationException) {
@@ -200,7 +208,7 @@ class VoiceSession(
             val acting = Turn.Acting(heard, plan.steps, plan.source, index)
             turnState.value = acting
             val needed = ready.confirmations.firstOrNull { it.stepIndex == index }
-            if (needed != null && !confirm(lang, strings.get(lang, R.string.confirm_tap, needed.target))) {
+            if (needed != null && !confirm(lang, confirmPhrase(step, needed.target, lang))) {
                 log.add(LogEntry.Kind.BLOCKED, strings.get(lang, R.string.log_declined, text.describe(step, lang)))
                 end(lang, finished(Turn.Result.CANCELLED, null), R.string.say_cancelled)
                 return
@@ -208,10 +216,10 @@ class VoiceSession(
             turnState.value = acting
             phaseState.value = Phase.WORKING
             val env = ExecEnv(lang, s, confirmedTarget = needed?.target, ranker = engines.ranker()) { what -> confirm(lang, what) }
-            val before = withContext(Dispatchers.Default) { executor.foregroundPackage() }
+            val (before, stamp) = withContext(Dispatchers.Default) { executor.foregroundPackage() to executor.windowStamp() }
             val result = withContext(Dispatchers.Default) { executor.execute(step, env) }
             if (result is ExecResult.Done && index < plan.steps.lastIndex) {
-                withContext(Dispatchers.Default) { executor.awaitSettled(step, before) }
+                withContext(Dispatchers.Default) { executor.awaitSettled(step, before, stamp) }
             }
             when (result) {
                 is ExecResult.Done -> {
@@ -293,6 +301,12 @@ class VoiceSession(
         return false
     }
 
+    /** The action named in the question: "tap “Send”" or "search Google for “…”". */
+    private fun confirmPhrase(step: Action, target: String, lang: Lang): String = when (step) {
+        is Action.Search -> strings.get(lang, R.string.confirm_search, step.query, text.targetName(lang, step.target))
+        else -> strings.get(lang, R.string.confirm_tap, target)
+    }
+
     /** Shows the final state first, then says [reply], so screen and voice agree. */
     private suspend fun end(lang: Lang, finished: Turn.Finished, @StringRes reply: Int) = end(lang, finished, strings.get(lang, reply))
 
@@ -318,5 +332,6 @@ class VoiceSession(
 
     private companion object {
         const val CONFIRM_ATTEMPTS = 2
+        const val SCREEN_READER_SETTLE_MS = 700L
     }
 }
