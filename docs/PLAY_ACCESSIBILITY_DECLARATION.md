@@ -27,10 +27,10 @@
 > Yes. Its primary purpose is to give people with visual and motor disabilities hands-free, eyes-free control of their phone. It is designed to work alongside TalkBack, uses large touch targets and a high-contrast mode, and supports Spanish, English and Dutch.
 
 **Autonomous functionality:**
-> VOZ never acts on its own initiative. It plans actions only in response to the user’s spoken request, limited to a fixed vocabulary of 18 action types and at most 5 steps. Actions on sensitive targets (send, pay, buy, delete, call, transfer) require a spoken confirmation. The user can stop any action by saying “stop” or tapping the microphone. An on-device action log shows everything VOZ did.
+> VOZ never acts on its own initiative. It plans actions only in response to the user’s spoken request, limited to a fixed vocabulary of 19 action types and at most 5 steps. Actions on sensitive targets (send, pay, buy, delete, call, transfer, subscribe, install, share and similar, and any price) require a spoken or on-screen confirmation, and VOZ refuses to guess between identical buttons. The user can stop any action by tapping the microphone, the floating mic or the accessibility button. An on-device history shows everything VOZ did.
 
 **Data handling:**
-> VOZ has no accounts, analytics or servers. Screen content is read in memory only to execute the user’s command and is not stored or transmitted, except when the user explicitly enables the optional cloud assistant with their own API key; then only a text-only summary of the current screen and the command are sent to the user’s chosen provider.
+> VOZ has no accounts, analytics or servers. Screen content is read in memory only to execute the user’s command and is not stored or transmitted. The Play build does not contain the cloud assistant that exists in developer and pilot builds (Gemini API terms restrict it to professional use and, in the EEA/CH/UK, to paid keys).
 
 ## Video demonstration (required by the form)
 
@@ -39,5 +39,23 @@ Record following [DEMO_SCRIPT.md](DEMO_SCRIPT.md), showing: onboarding explanati
 ## Open questions for the owner
 
 - [VERIFY] Whether Play requires additional evidence (organisation letters, user research) to accept the accessibility-tool declaration.
-- [VERIFY] Whether the optional cloud assistant needs its own Data safety entries (likely yes: “App activity / other user-generated content”, shared with the user’s chosen provider, optional).
+- Data safety (Play build): no data collected or shared; no data leaves the device. Re-check if a cloud feature is ever added.
 - [VERIFY] Whether a consumer “VOZ Plus” subscription affects the accessibility-tool status (the free core must remain the primary purpose).
+
+## Microphone foreground service declaration (Play Console)
+
+The floating mic is a `microphone` foreground service (Android 14+ requires the type, the
+`FOREGROUND_SERVICE_MICROPHONE` permission and a granted `RECORD_AUDIO`; it can only start while the app is visible).
+Play Console asks for a description and a video of the feature
+([Play help](https://support.google.com/googleplay/android-developer/answer/13392821)). Draft description:
+
+> The floating mic lets a person who cannot easily use the touchscreen start a voice command while another app is in
+> front. The microphone is used only after the user taps the floating mic, for one command at a time; a persistent
+> notification shows the feature is on and offers “Hide mic”.
+
+## Prominent disclosure
+
+Although accessibility tools are exempt, the onboarding accessibility step works as an in-app disclosure before the
+user is sent to system settings: it says what VOZ reads (screen text), when (only on a command), and that it keeps and
+sends nothing. The Play User Data policy asks for that disclosure before permission requests
+([Play help](https://support.google.com/googleplay/android-developer/answer/10144311)).
