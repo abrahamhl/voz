@@ -72,5 +72,5 @@ with the `-UNSIGNED` suffix and a warning; they cannot be uploaded to Play.
 
 - No release has been validated on a physical device — see
   [DEVICE_VALIDATION.md](DEVICE_VALIDATION.md).
-- The cloud engine is disabled in release builds but its code and HTTP dependency
-  are still packaged; truly excluding them is tracked as a hardening item.
+- The cloud planner and HTTP dependency are excluded from release source sets;
+  release still needs physical-device validation before any store submission.

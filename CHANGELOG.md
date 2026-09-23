@@ -18,7 +18,7 @@ Release-candidate work targeting `0.2.0-rc1` (the `versionName` in `app/build.gr
 - Backups and device-to-device transfer of app data are excluded.
 
 ### Changed
-- The Gemini cloud brain is available only in developer and pilot builds, behind a consent screen that states Google's Gemini API terms (professional use, adults, paid keys in the EEA/CH/UK). Release builds switch it off at build time and drop the internet permission.
+- The Gemini cloud brain is available only in developer and pilot builds, behind a consent screen that states Google's Gemini API terms (professional use, adults, paid keys in the EEA/CH/UK). Release builds exclude its planner and HTTP client, and drop the internet permission.
 - New accessible interface: icon-only mic with real listening state, last-command card, on-screen Yes/No for confirmations, one banner per problem with one fix, three-step setup with the restricted-settings steps in the right order, grouped settings with steppers, readable history, About and privacy screen.
 - The floating mic shows its state with colour, icon and TalkBack state, can be moved with accessibility actions, tolerates tremor and stays on screen.
 - Text-to-speech recovers from a dead engine; failures play an error tone and show a banner.
