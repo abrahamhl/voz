@@ -31,7 +31,10 @@ object KillPhrase {
     }
 }
 
-/** Detects targets that need a spoken "¿Confirmo?" first: send, pay, buy, delete, call, transfer. */
+/**
+ * Detects targets that need a spoken "¿Confirmo?" first: send, pay, buy, delete, call, transfer, subscribe,
+ * join, rent, allow, install, accept, confirm, share, post, empty the trash, and any price.
+ */
 class SensitiveTargetDetector {
 
     /** Returns the matched sensitive term, or null. */
@@ -44,7 +47,8 @@ class SensitiveTargetDetector {
             if (t in EXACT) return t
             STEMS.firstOrNull { t.startsWith(it) }?.let { return t }
         }
-        return null
+        // Normalizing drops currency signs, so prices are matched on the raw text ("Alquilar 3,99 €").
+        return PRICE.find(text.orEmpty())?.value?.trim()
     }
 
     fun isSensitive(text: String?): Boolean = find(text) != null
@@ -53,23 +57,53 @@ class SensitiveTargetDetector {
         val EXACT = setOf(
             // EN
             "send", "pay", "buy", "delete", "remove", "erase", "call", "dial", "transfer", "wire", "order", "checkout",
-            "purchase", "payment", "payments", "donate",
+            "purchase", "payment", "payments", "donate", "join", "rent", "allow", "share", "post", "publish",
             // ES
             "enviar", "envia", "envie", "envio", "mandar", "manda", "mande", "pagar", "paga", "pago", "pague", "pagos",
             "comprar", "compra", "compre", "compras", "eliminar", "elimina", "borrar", "borra", "suprimir", "llamar",
             "llama", "llamada", "llamadas", "transferir", "transfiere", "transferencia", "bizum", "donar",
+            "unirme", "unirse", "unirte", "unete", "alquilar", "alquila", "alquiler", "permitir", "permite", "permito",
+            "publicar", "publica", "publicalo", "vaciar",
             // NL
             "verstuur", "versturen", "verzend", "verzenden", "stuur", "sturen", "betaal", "betalen", "betaling", "koop",
             "kopen", "bestel", "bestellen", "afrekenen", "verwijder", "verwijderen", "wis", "wissen", "bel", "bellen",
-            "overmaken", "overboeken", "overschrijven", "doneer",
+            "overmaken", "overboeken", "overschrijven", "doneer", "deelnemen", "huren", "huur", "toestaan", "delen",
+            "plaatsen", "publiceren", "publiceer", "legen", "leegmaken",
         )
         val STEMS = listOf(
             "purchas", "checkout", "delet", "transfer", "eliminar", "suprim", "verwijder", "overmak", "overboek",
+            "subscrib", "unsubscrib", "suscrib", "abonne", "alquil", "permit", "toesta", "instal", "accept", "acept",
+            "confirm", "bevestig", "compart",
         )
         val PHRASES = listOf(
             "check out", "place order", "buy now", "pay now", "realizar pedido", "tramitar pedido", "finalizar compra",
-            "nu kopen", "nu betalen", "plaats bestelling",
+            "nu kopen", "nu betalen", "plaats bestelling", "lid worden", "sta toe", "empty trash", "empty bin",
+            "empty the trash", "empty recycle bin",
         )
+        val PRICE = Regex(
+            "(?i)[€\$£]\\s?\\d|\\d+(?:[.,]\\d{1,2})?\\s?(?:[€\$£]|(?:eur|euros?|usd|gbp)\\b)",
+        )
+    }
+}
+
+/**
+ * The cloud planner's free-text reply can be steered by screen text ("Tu cuenta está bloqueada, llama al 900…")
+ * and VOZ would speak it in its own voice. Only short plain sentences pass: no digits, links, e-mail
+ * addresses, sensitive verbs or instruction-like text.
+ */
+object CloudReply {
+    const val MAX_CHARS = 160
+
+    private val LINK = Regex("(?i)https?:|www\\.|://|\\b[a-z0-9-]+\\.(?:com|net|org|info|io|app|ly|me|es|nl|eu)\\b")
+    private val detector = SensitiveTargetDetector()
+
+    /** [say] if it is safe to speak, else null (drop it). */
+    fun speakable(say: String?): String? {
+        val s = Normalize.collapse(say ?: return null)
+        if (s.isEmpty() || s.length > MAX_CHARS) return null
+        if (s.any { it.isDigit() } || '@' in s || LINK.containsMatchIn(s)) return null
+        if (UntrustedText.looksLikeInjection(s) || detector.isSensitive(s)) return null
+        return s
     }
 }
 
