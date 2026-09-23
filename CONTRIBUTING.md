@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping make phones usable by voice.
+Thanks for helping make phones usable by voice. Please read the [code of conduct](CODE_OF_CONDUCT.md). If you have an Android phone, the most useful contribution right now is running the [device validation pack](docs/DEVICE_VALIDATION.md) and reporting the results.
 
 ## Ground rules
 
