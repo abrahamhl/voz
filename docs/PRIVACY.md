@@ -55,7 +55,7 @@ Switch it off or delete the key at any time in Settings.
 
 ## Internet permission
 
-The app declares internet access only for the pilot cloud brain and for opening web search results in your browser.
+Release builds do not request the internet permission at all, so Android itself prevents VOZ from sending anything (CI checks the release APK on every commit). Developer and pilot builds request it only for the cloud brain. Web search results open in your browser, which has its own access.
 
 ## Who is responsible
 

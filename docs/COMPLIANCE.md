@@ -17,7 +17,7 @@ A working checklist of the rules VOZ must meet, what the code already does, and 
 
 | Rule | Source | VOZ today |
 |---|---|---|
-| Professional or business use only, not consumer use; users must be 18+; not for services directed at minors | [Gemini API Additional Terms](https://ai.google.dev/gemini-api/terms) (effective 2026-03-23) | The cloud brain is compiled out of release builds (`cloud_brain_available`). Pilot builds keep it for adult testers with their own key. |
+| Professional or business use only, not consumer use; users must be 18+; not for services directed at minors | [Gemini API Additional Terms](https://ai.google.dev/gemini-api/terms) (effective 2026-03-23) | Release builds switch the cloud brain off at build time (`cloud_brain_available`) and drop the internet permission; CI verifies both on the release APK. Pilot builds keep it for adult testers with their own key. |
 | Only Paid Services when making API clients available to users in the EEA, Switzerland or the UK | Same | Consent screen v2 states it. Release builds don't include the feature. |
 | Unpaid content may be used to improve Google products and read by human reviewers; don't submit sensitive or personal data | Same | Masking of e-mail, IBAN, codes, phone and card numbers; on-phone brains first; the app name is not sent; the consent screen warns against banking, health and chat screens |
 

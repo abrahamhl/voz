@@ -67,7 +67,7 @@ on labels inside the YouTube app that have not been checked on a device yet.
 - The screen is read **only when you give a command** and is not stored. The history (last 200 entries) stays on the
   phone; dictated text is stored only as a character count. Backups and device-to-device transfer are turned off.
 - **Cloud brain (developer and pilot builds only).** Google’s Gemini API terms allow it only for professional use by
-  adults, and only with paid keys for users in the EEA, Switzerland and the UK, so public release builds leave it out.
+  adults, and only with paid keys for users in the EEA, Switzerland and the UK, so public release builds leave it out. Release builds also have no internet permission at all, and CI checks this on every commit.
   In pilot builds it is off by default and needs your own key plus an explicit consent screen. When it is on, only
   commands VOZ can’t handle on the phone are sent, with the screen text, and e-mail addresses, IBANs and long numbers
   masked first.
