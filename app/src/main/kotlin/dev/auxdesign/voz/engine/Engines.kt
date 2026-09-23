@@ -41,16 +41,19 @@ class JevEngine : DecisionEngine {
     }
 }
 
-/** Chooses which brains to ask, in order. The cloud is used only when the user turned it on and saved a key. */
+/**
+ * Chooses which brains to ask, in order. On-phone brains first, so nothing leaves the phone when they can handle
+ * the command; the cloud last, and only when the user turned it on, accepted the privacy notice and saved a key.
+ */
 class EngineProvider(
     private val local: LocalEngine,
     private val jev: JevEngine,
     private val cloud: () -> DecisionEngine?,
 ) {
     fun planners(settings: VozSettings): List<DecisionEngine> = buildList {
-        if (settings.cloudEnabled) cloud()?.takeIf { it.isAvailable }?.let { add(it) }
-        if (jev.isAvailable) add(jev)
         add(local)
+        if (jev.isAvailable) add(jev)
+        if (settings.cloudAllowed) cloud()?.takeIf { it.isAvailable }?.let { add(it) }
     }
 
     /** Comment ranking always stays on the phone (comments are never uploaded). */
