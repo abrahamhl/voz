@@ -74,7 +74,7 @@ on labels inside the YouTube app that have not been checked on a device yet.
   commands VOZ can’t handle on the phone are sent, with the screen text, and e-mail addresses, IBANs and long numbers
   masked first.
 
-Details: [Privacy](docs/PRIVACY.md) · [Security](SECURITY.md) · [Compliance](docs/COMPLIANCE.md) · [Architecture](docs/ARCHITECTURE.md)
+Details: [Privacy](docs/PRIVACY.md) · [Security](SECURITY.md) · [Compliance](docs/COMPLIANCE.md) · [Architecture](docs/ARCHITECTURE.md) · [Readiness](docs/READINESS.md) · [Deployment](docs/DEPLOYMENT.md)
 
 ## What is verified
 
@@ -100,7 +100,7 @@ validation, ranking, safety) and `:app` (Android, Jetpack Compose).
 
 ## More
 
-[Device validation](docs/DEVICE_VALIDATION.md) · [Pitch](docs/PITCH.md) · [Business model](docs/BUSINESS_MODEL.md) ·
+[Device validation](docs/DEVICE_VALIDATION.md) · [Readiness](docs/READINESS.md) · [Deployment](docs/DEPLOYMENT.md) · [Pitch](docs/PITCH.md) · [Business model](docs/BUSINESS_MODEL.md) ·
 [Demo script](docs/DEMO_SCRIPT.md) · [Play accessibility declaration (draft)](docs/PLAY_ACCESSIBILITY_DECLARATION.md) ·
 [Contributing](CONTRIBUTING.md) · [Code of conduct](CODE_OF_CONDUCT.md) · [Changelog](CHANGELOG.md)
 
