@@ -53,7 +53,7 @@
     <string name="onb_body_mic">VOZ only listens after you tap the mic, and stops when you tap it again. Your phone’s speech service turns your voice into text.</string>
     <string name="onb_btn_mic">Allow microphone</string>
     <string name="onb_title_a11y">Accessibility service</string>
-    <string name="onb_body_a11y">VOZ needs its accessibility service to read the screen and to tap, scroll and type for you. It only acts when you ask.</string>
+    <string name="onb_body_a11y">VOZ needs its accessibility service to read the text on the screen and to tap, scroll and type for you. It reads the screen only when you give a command, keeps nothing of what it reads, and sends none of it anywhere unless you turn on a cloud feature yourself.</string>
     <string name="onb_a11y_warning">Android will warn that VOZ can take full control of your phone. Every screen reader and voice-control app gets this warning. VOZ only acts on a command you give, and asks before anything that sends, pays, deletes or calls.</string>
     <string name="onb_btn_a11y">Open accessibility settings</string>
     <string name="onb_restricted_title">Android says “Restricted setting”? (Android 13 and later)</string>
