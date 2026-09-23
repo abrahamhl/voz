@@ -68,9 +68,12 @@ class VoiceSession(
     val speechOutput: StateFlow<Boolean> = speechOutputState.asStateFlow()
 
     private var job: Job? = null
+    // Written by the turn (main or background thread), read by the on-screen buttons on the main thread.
+    @Volatile
     private var pendingAnswer: CompletableDeferred<Boolean>? = null
 
     /** What the current turn heard, as it may be shown (dictation reduced to its length). */
+    @Volatile
     private var shownHeard: String? = null
 
     val isBusy: Boolean get() = job?.isActive == true
