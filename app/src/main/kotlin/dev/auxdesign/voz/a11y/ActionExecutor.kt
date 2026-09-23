@@ -316,7 +316,11 @@ class ActionExecutor(
 
     private fun cancelled(env: ExecEnv) = ExecResult.Cancelled(strings.get(env.lang, R.string.say_cancelled))
 
-    private fun needAccessibility(env: ExecEnv) = fail(env, R.string.say_need_a11y)
+    /** From another app there is no other route to the switch, so the accessibility settings open too. */
+    private fun needAccessibility(env: ExecEnv): ExecResult {
+        launch(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        return fail(env, R.string.say_need_a11y)
+    }
 
     private companion object {
         const val SETTLE_POLLS = 15

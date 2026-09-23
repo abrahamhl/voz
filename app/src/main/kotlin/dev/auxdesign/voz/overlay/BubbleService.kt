@@ -8,7 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.content.res.ColorStateList
-import android.graphics.Color
+import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
@@ -20,15 +20,21 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.ImageView
+import androidx.annotation.StringRes
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import dev.auxdesign.voz.MainActivity
 import dev.auxdesign.voz.R
-import dev.auxdesign.voz.data.VozSettings
+import dev.auxdesign.voz.data.BubbleSize
 import dev.auxdesign.voz.graph
 import dev.auxdesign.voz.util.Permissions
+import dev.auxdesign.voz.voice.OrbState
 import dev.auxdesign.voz.voice.VoiceSession
+import dev.auxdesign.voz.voice.busy
+import dev.auxdesign.voz.voice.orbState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,6 +42,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.math.hypot
 import kotlin.math.roundToInt
@@ -49,6 +58,7 @@ class BubbleService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val windowManager by lazy { getSystemService(WindowManager::class.java) }
     private var bubble: ImageView? = null
+    private var params: WindowManager.LayoutParams? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -73,10 +83,20 @@ class BubbleService : Service() {
         return START_NOT_STICKY
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // After a rotation the old position may be off-screen.
+        val view = bubble ?: return
+        val p = params ?: return
+        clamp(p)
+        runCatching { windowManager.updateViewLayout(view, p) }
+    }
+
     override fun onDestroy() {
         scope.cancel()
         bubble?.let { runCatching { windowManager.removeView(it) } }
         bubble = null
+        params = null
         runningState.value = false
         super.onDestroy()
     }
@@ -112,50 +132,114 @@ class BubbleService : Service() {
     }
 
     private fun addBubble() {
-        val settings = graph.settings.value ?: VozSettings()
         val metrics = resources.displayMetrics
-        val size = (settings.bubbleSize.dp * metrics.density).roundToInt()
+        val size = sizePx(graph.settings.value?.bubbleSize ?: BubbleSize.MEDIUM)
         val view = ImageView(this).apply {
             setImageResource(R.drawable.ic_mic)
-            imageTintList = ColorStateList.valueOf(Color.WHITE)
-            val pad = size / 4
-            setPadding(pad, pad, pad, pad)
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(ContextCompat.getColor(this@BubbleService, R.color.voz_brand))
-                setStroke((2 * metrics.density).roundToInt(), Color.WHITE)
-            }
-            contentDescription = getString(R.string.bubble_cd)
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL }
+            contentDescription = getString(R.string.orb_cd)
             isFocusable = true
             setOnClickListener { graph.session.toggle() }
         }
-        val params = WindowManager.LayoutParams(
+        val p = WindowManager.LayoutParams(
             size,
             size,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
             x = metrics.widthPixels - size - (16 * metrics.density).roundToInt()
             y = metrics.heightPixels / 3
         }
-        view.setOnTouchListener(DragToMove(params))
-        windowManager.addView(view, params)
+        clamp(p)
+        applySize(view, p, size)
+        view.setOnTouchListener(DragToMove(p))
+        addMoveActions(view, p)
+        windowManager.addView(view, p)
         bubble = view
+        params = p
+        render(view, OrbState.IDLE)
         scope.launch {
-            graph.session.phase.collect { phase ->
-                val busy = phase != VoiceSession.Phase.IDLE
-                val color = ContextCompat.getColor(this@BubbleService, if (busy) R.color.voz_listening else R.color.voz_brand)
-                (view.background as? GradientDrawable)?.setColor(color)
-                view.contentDescription = getString(if (busy) R.string.bubble_cd_busy else R.string.bubble_cd)
+            val session = graph.session
+            combine(session.turn, session.micOpen, session.phase) { turn, micOpen, phase ->
+                orbState(turn, micOpen, phase == VoiceSession.Phase.SPEAKING)
+            }.distinctUntilChanged().collect { render(view, it) }
+        }
+        scope.launch {
+            graph.settings.map { it?.bubbleSize ?: BubbleSize.MEDIUM }.distinctUntilChanged().collect { bubbleSize ->
+                val px = sizePx(bubbleSize)
+                if (px != p.width) {
+                    applySize(view, p, px)
+                    clamp(p)
+                    runCatching { windowManager.updateViewLayout(view, p) }
+                }
             }
         }
     }
 
-    /** Drag moves the bubble; a tap without movement is a click (TalkBack double-tap also clicks). */
+    private fun sizePx(size: BubbleSize): Int = (size.dp * resources.displayMetrics.density).roundToInt()
+
+    private fun applySize(view: ImageView, p: WindowManager.LayoutParams, size: Int) {
+        p.width = size
+        p.height = size
+        val pad = size / 4
+        view.setPadding(pad, pad, pad, pad)
+    }
+
+    /** Navy at rest or working, yellow only while the mic is open; icon + state description, never colour alone. */
+    private fun render(view: ImageView, state: OrbState) {
+        val micOpen = state == OrbState.LISTENING || state == OrbState.CONFIRMING
+        val fill = ContextCompat.getColor(this, if (micOpen) R.color.voz_voice else R.color.voz_brand)
+        val fg = ContextCompat.getColor(this, if (micOpen) R.color.voz_on_voice else R.color.voz_on_brand)
+        (view.background as? GradientDrawable)?.apply {
+            setColor(fill)
+            setStroke((2 * resources.displayMetrics.density).roundToInt(), fg)
+        }
+        view.setImageResource(if (state.busy && !micOpen) R.drawable.ic_stop else R.drawable.ic_mic)
+        view.imageTintList = ColorStateList.valueOf(fg)
+        ViewCompat.setStateDescription(view, getString(stateText(state)))
+        val clickLabel = getString(if (state.busy) R.string.orb_action_stop else R.string.orb_action_start)
+        ViewCompat.replaceAccessibilityAction(view, AccessibilityActionCompat.ACTION_CLICK, clickLabel) { v, _ -> v.performClick() }
+    }
+
+    @StringRes
+    private fun stateText(state: OrbState): Int = when (state) {
+        OrbState.IDLE -> R.string.orb_sd_idle
+        OrbState.STARTING -> R.string.orb_starting
+        OrbState.LISTENING -> R.string.orb_listening
+        OrbState.UNDERSTANDING, OrbState.ACTING -> R.string.orb_sd_understanding
+        OrbState.SPEAKING -> R.string.orb_speaking
+        OrbState.CONFIRMING -> R.string.orb_sd_confirming
+    }
+
+    /** Screen-reader and switch users can't drag: they get "Move left/right/up/down" actions instead. */
+    private fun addMoveActions(view: View, p: WindowManager.LayoutParams) {
+        listOf(
+            R.string.bubble_move_left to (-1 to 0),
+            R.string.bubble_move_right to (1 to 0),
+            R.string.bubble_move_up to (0 to -1),
+            R.string.bubble_move_down to (0 to 1),
+        ).forEach { (label, dir) ->
+            ViewCompat.addAccessibilityAction(view, getString(label)) { v, _ ->
+                p.x += dir.first * p.width
+                p.y += dir.second * p.height
+                clamp(p)
+                runCatching { windowManager.updateViewLayout(v, p) }.isSuccess
+            }
+        }
+    }
+
+    private fun clamp(p: WindowManager.LayoutParams) {
+        val metrics = resources.displayMetrics
+        val clamped = BubbleBounds.clamp(p.x, p.y, p.width, metrics.widthPixels, metrics.heightPixels)
+        p.x = clamped.first
+        p.y = clamped.second
+    }
+
+    /** Drag moves the bubble; a tap is a click (TalkBack double-tap also clicks). A tremor must not turn a tap into a drag. */
     private inner class DragToMove(private val params: WindowManager.LayoutParams) : View.OnTouchListener {
-        private val slop = ViewConfiguration.get(this@BubbleService).scaledTouchSlop
+        private val slop = ViewConfiguration.get(this@BubbleService).scaledTouchSlop * TREMOR_SLOP_FACTOR
         private var startX = 0
         private var startY = 0
         private var downX = 0f
@@ -178,6 +262,7 @@ class BubbleService : Service() {
                     if (dragging) {
                         params.x = startX + dx.roundToInt()
                         params.y = startY + dy.roundToInt()
+                        clamp(params)
                         windowManager.updateViewLayout(v, params)
                     }
                 }
@@ -191,6 +276,7 @@ class BubbleService : Service() {
         private const val CHANNEL_ID = "voz_bubble"
         private const val NOTIFICATION_ID = 7
         private const val ACTION_STOP = "dev.auxdesign.voz.action.STOP_BUBBLE"
+        private const val TREMOR_SLOP_FACTOR = 3
 
         private val runningState = MutableStateFlow(false)
         val running: StateFlow<Boolean> = runningState.asStateFlow()
@@ -213,4 +299,10 @@ class BubbleService : Service() {
 
         fun canStart(context: Context): Boolean = Permissions.hasMic(context) && Settings.canDrawOverlays(context)
     }
+}
+
+/** Keeps the bubble fully on screen (pure, unit-tested). */
+object BubbleBounds {
+    fun clamp(x: Int, y: Int, size: Int, screenWidth: Int, screenHeight: Int): Pair<Int, Int> =
+        x.coerceIn(0, (screenWidth - size).coerceAtLeast(0)) to y.coerceIn(0, (screenHeight - size).coerceAtLeast(0))
 }
