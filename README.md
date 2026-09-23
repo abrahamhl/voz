@@ -67,7 +67,7 @@ on labels inside the YouTube app that have not been checked on a device yet.
 - The screen is read **only when you give a command** and is not stored. The history (last 200 entries) stays on the
   phone; dictated text is stored only as a character count. Backups and device-to-device transfer are turned off.
 - **Cloud brain (developer and pilot builds only).** Google’s Gemini API terms allow it only for professional use by
-  adults, and only with paid keys for users in the EEA, Switzerland and the UK, so public release builds leave it out. Release builds also have no internet permission at all, and CI checks this on every commit.
+  adults, and only with paid keys for users in the EEA, Switzerland and the UK, so public release builds switch it off at build time (`cloud_brain_available=false`) and drop the internet permission; CI verifies both on every release build, so a release build cannot reach the network.
   In pilot builds it is off by default and needs your own key plus an explicit consent screen. When it is on, only
   commands VOZ can’t handle on the phone are sent, with the screen text, and e-mail addresses, IBANs and long numbers
   masked first.
@@ -92,9 +92,9 @@ Requirements: JDK 17 and the Android SDK. Then:
 ./gradlew :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 ```
 
-The debug APK (with the pilot-only cloud brain) lands in `app/build/outputs/apk/debug/`. Release builds leave the
-cloud brain out. Modules: `:core` (pure Kotlin: grammar, routing, validation, ranking, safety) and `:app` (Android,
-Jetpack Compose).
+The debug APK (with the pilot-only cloud brain) lands in `app/build/outputs/apk/debug/`. Release builds switch the
+cloud brain off at build time and drop the internet permission. Modules: `:core` (pure Kotlin: grammar, routing,
+validation, ranking, safety) and `:app` (Android, Jetpack Compose).
 
 ## More
 
