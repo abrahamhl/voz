@@ -155,7 +155,6 @@ object GeminiProtocol {
         val utterance = UntrustedText.clean(request.utterance.text, MAX_UTTERANCE)
         val user = buildString {
             append("User language: ").append(request.utterance.lang.tag).append('\n')
-            append("Foreground app: ").append(request.screen.packageName ?: "unknown").append('\n')
             append("User said: \"").append(utterance).append("\"\n")
             append(UntrustedText.fence(request.screen))
         }

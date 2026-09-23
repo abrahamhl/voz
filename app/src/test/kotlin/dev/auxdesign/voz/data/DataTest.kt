@@ -98,10 +98,18 @@ class SettingsCodecTest {
             bubbleSize = BubbleSize.LARGE,
             highContrast = true,
             onboardingDone = true,
+            cloudConsent = VozSettings.CLOUD_CONSENT_VERSION,
         )
         val prefs = mutablePreferencesOf()
         SettingsCodec.write(prefs, settings)
         assertEquals(settings, SettingsCodec.read(prefs))
+    }
+
+    @Test
+    fun `the cloud stays off until the privacy notice is accepted`() {
+        assertFalse(VozSettings(cloudEnabled = true).cloudAllowed)
+        assertFalse(VozSettings(cloudEnabled = false, cloudConsent = VozSettings.CLOUD_CONSENT_VERSION).cloudAllowed)
+        assertTrue(VozSettings(cloudEnabled = true, cloudConsent = VozSettings.CLOUD_CONSENT_VERSION).cloudAllowed)
     }
 
     @Test

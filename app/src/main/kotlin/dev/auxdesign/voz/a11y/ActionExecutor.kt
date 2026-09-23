@@ -5,8 +5,10 @@ import android.app.SearchManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.media.AudioManager
 import android.net.Uri
+import androidx.core.content.edit
 import androidx.core.net.toUri
 import android.provider.Settings
 import android.view.Surface
@@ -59,6 +61,7 @@ class ActionExecutor(
     private val detector: SensitiveTargetDetector = SensitiveTargetDetector(),
 ) {
     private val service: VozAccessibilityService? get() = A11yBridge.service.value
+    private val state: SharedPreferences by lazy { context.getSharedPreferences(STATE_PREFS, Context.MODE_PRIVATE) }
 
     /** Snapshot of the active window for the planners (empty if the service is off). */
     fun snapshot(): ScreenSnapshot {
@@ -70,11 +73,14 @@ class ActionExecutor(
     /** Package of the window in front right now (null if unknown). */
     fun foregroundPackage(): String? = service?.let { it.root()?.packageName ?: it.foregroundPackage }
 
+    /** Counter of window events seen by the accessibility service; captured before a step, compared after. */
+    fun windowStamp(): Long = service?.windowEvents ?: 0L
+
     /**
-     * After a step that changes the window, wait (≤ 3 s) until the new window is in front, so the next
-     * step never acts on a stale tree or on coordinates from a window that is gone.
+     * After a step that changes the window, wait until the new window is in front (≤ 3 s) or the screen has
+     * reacted and gone quiet, so the next step never acts on a stale tree or on coordinates that are gone.
      */
-    suspend fun awaitSettled(action: Action, packageBefore: String?) {
+    suspend fun awaitSettled(action: Action, packageBefore: String?, stampBefore: Long) {
         val opensSomethingElse = action is Action.OpenApp || action is Action.Search ||
             (action is Action.Global && action.kind == GlobalKind.HOME)
         val mayChangeWindow = opensSomethingElse || action is Action.Global || action is Action.Tap || action is Action.Fullscreen
@@ -89,7 +95,7 @@ class ActionExecutor(
                 }
             }
         } else {
-            delay(SETTLE_SHORT_MS)
+            Settle.awaitChangeThenQuiet({ windowStamp() }, stampBefore)
         }
     }
 
@@ -168,18 +174,20 @@ class ActionExecutor(
             is NodeFinder.TapResolution.Found -> r.target
             is NodeFinder.TapResolution.Ambiguous -> {
                 // One "Eliminar" per row: never guess the row for anything that needs a "sí".
-                if (env.confirmedTarget != null || r.target.labels.any(detector::isSensitive)) {
+                if (env.confirmedTarget != null || r.target.riskLabels.any(detector::isSensitive)) {
                     return fail(env, R.string.say_ambiguous, r.count, r.target.hit.label)
                 }
                 r.target
             }
         }
-        // Check what will really be pressed (matched text and the clickable container), not what the user said:
-        // "borrar" may match "Borrar cuenta", and a harmless label may sit inside a "Pay" button.
-        val risky = target.labels.filter { detector.isSensitive(it) }
+        // Check what will really be pressed (matched text, the clickable container and the texts inside it), not
+        // what the user said: "borrar" may match "Borrar cuenta", and "Visa" may sit inside a "Pagar 49,99 €" row.
+        val risky = target.riskLabels.filter { detector.isSensitive(it) }
         val confirmed = env.confirmedTarget?.let(Normalize::forMatch)
         if (risky.isNotEmpty() && risky.any { Normalize.forMatch(it) != confirmed }) {
-            if (!env.confirm(strings.get(env.lang, R.string.confirm_tap, risky.first()))) return cancelled(env)
+            // Name the most informative label (the one with the amount), capped so the question stays short.
+            val what = risky.maxBy { it.length }.take(MAX_CONFIRM_LABEL)
+            if (!env.confirm(strings.get(env.lang, R.string.confirm_tap, what))) return cancelled(env)
             // The answer took seconds: press only if the fresh screen still shows what was confirmed.
             target = NodeFinder.recheck(target, service?.root(), label) ?: return fail(env, R.string.say_screen_changed)
         }
@@ -187,8 +195,11 @@ class ActionExecutor(
         val pressed = if (clickable != null) {
             clickable.click()
         } else {
-            // Nothing clickable in the tree (e.g. web content): tap the label's own position in this fresh window.
-            svc.tapAt(target.hit.node.bounds.centerX, target.hit.node.bounds.centerY)
+            // Nothing clickable in the tree (e.g. web content): tap the on-screen part of the label, never off screen.
+            val metrics = context.resources.displayMetrics
+            val point = NodeFinder.visibleCenter(target.hit.node.bounds, metrics.widthPixels, metrics.heightPixels)
+                ?: return fail(env, R.string.say_not_found, label)
+            svc.tapAt(point.first, point.second)
         }
         return if (pressed) done(env, R.string.say_tapped, target.hit.label) else fail(env, R.string.say_action_failed)
     }
@@ -222,17 +233,32 @@ class ActionExecutor(
 
     /** Toggles portrait/landscape. Needs "modify system settings", which the user grants in a guided screen. */
     private fun rotate(env: ExecEnv): ExecResult {
+        val current = runCatching { Settings.System.getInt(context.contentResolver, Settings.System.USER_ROTATION, Surface.ROTATION_0) }
+            .getOrDefault(Surface.ROTATION_0)
+        return rotateTo(env, landscape = current == Surface.ROTATION_0 || current == Surface.ROTATION_180)
+    }
+
+    /**
+     * Portrait or landscape, idempotent. Forcing an orientation turns auto-rotate off; the user's own
+     * auto-rotate choice is saved and given back when VOZ returns to portrait.
+     */
+    private fun rotateTo(env: ExecEnv, landscape: Boolean): ExecResult {
         if (!Settings.System.canWrite(context)) {
             launch(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, "package:${context.packageName}".toUri()))
             return ExecResult.Failed(strings.get(env.lang, R.string.say_rotate_permission))
         }
         val resolver = context.contentResolver
         return try {
-            val current = Settings.System.getInt(resolver, Settings.System.USER_ROTATION, Surface.ROTATION_0)
-            val toLandscape = current == Surface.ROTATION_0 || current == Surface.ROTATION_180
-            Settings.System.putInt(resolver, Settings.System.ACCELEROMETER_ROTATION, 0)
-            Settings.System.putInt(resolver, Settings.System.USER_ROTATION, if (toLandscape) Surface.ROTATION_90 else Surface.ROTATION_0)
-            done(env, if (toLandscape) R.string.say_rotated_landscape else R.string.say_rotated_portrait)
+            val saved = if (state.contains(KEY_SAVED_AUTO_ROTATE)) state.getInt(KEY_SAVED_AUTO_ROTATE, 0) else null
+            val auto = Settings.System.getInt(resolver, Settings.System.ACCELEROMETER_ROTATION, 0)
+            val change = RotationPlan.to(landscape, auto, saved)
+            Settings.System.putInt(resolver, Settings.System.ACCELEROMETER_ROTATION, change.autoRotate)
+            Settings.System.putInt(resolver, Settings.System.USER_ROTATION, if (landscape) Surface.ROTATION_90 else Surface.ROTATION_0)
+            state.edit {
+                val keep = change.savedAutoRotate
+                if (keep == null) remove(KEY_SAVED_AUTO_ROTATE) else putInt(KEY_SAVED_AUTO_ROTATE, keep)
+            }
+            done(env, if (landscape) R.string.say_rotated_landscape else R.string.say_rotated_portrait)
         } catch (e: SecurityException) {
             fail(env, R.string.say_action_failed)
         } catch (e: IllegalArgumentException) {
@@ -247,9 +273,10 @@ class ActionExecutor(
             YouTubeFlows.Fullscreen.NOT_YOUTUBE -> fail(env, R.string.say_open_video_first)
             YouTubeFlows.Fullscreen.NOT_FOUND ->
                 if (enter) {
-                    rotate(env)
+                    // Saying "full screen" twice must not flip back to portrait.
+                    rotateTo(env, landscape = true)
                 } else if (svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)) {
-                    ExecResult.Done()
+                    if (state.contains(KEY_SAVED_AUTO_ROTATE)) rotateTo(env, landscape = false) else ExecResult.Done()
                 } else {
                     fail(env, R.string.say_action_failed)
                 }
@@ -316,12 +343,18 @@ class ActionExecutor(
 
     private fun cancelled(env: ExecEnv) = ExecResult.Cancelled(strings.get(env.lang, R.string.say_cancelled))
 
-    private fun needAccessibility(env: ExecEnv) = fail(env, R.string.say_need_a11y)
+    /** From another app there is no other route to the switch, so the accessibility settings open too. */
+    private fun needAccessibility(env: ExecEnv): ExecResult {
+        launch(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        return fail(env, R.string.say_need_a11y)
+    }
 
     private companion object {
         const val SETTLE_POLLS = 15
         const val SETTLE_POLL_MS = 200L
-        const val SETTLE_SHORT_MS = 700L
         const val MAX_READ_LINE = 200
+        const val MAX_CONFIRM_LABEL = 80
+        const val STATE_PREFS = "voz_state"
+        const val KEY_SAVED_AUTO_ROTATE = "saved_auto_rotate"
     }
 }

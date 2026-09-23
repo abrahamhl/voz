@@ -28,7 +28,12 @@ data class VozSettings(
     val bubbleSize: BubbleSize = BubbleSize.MEDIUM,
     val highContrast: Boolean = false,
     val onboardingDone: Boolean = false,
+    /** Version of the cloud privacy notice the user accepted (0 = never). */
+    val cloudConsent: Int = 0,
 ) {
+    /** The cloud planner may run: switched on, and the current privacy notice accepted. */
+    val cloudAllowed: Boolean get() = cloudEnabled && cloudConsent >= CLOUD_CONSENT_VERSION
+
     fun sanitized(): VozSettings = copy(
         commentDepth = commentDepth.coerceIn(MIN_COMMENT_DEPTH, MAX_COMMENT_DEPTH),
         speechRate = speechRate.coerceIn(MIN_RATE, MAX_RATE),
@@ -40,6 +45,7 @@ data class VozSettings(
         const val MAX_COMMENT_DEPTH = 15
         const val MIN_RATE = 0.5f
         const val MAX_RATE = 2.0f
+        const val CLOUD_CONSENT_VERSION = 2
     }
 }
 
@@ -52,6 +58,7 @@ object SettingsCodec {
     val BUBBLE = stringPreferencesKey("bubble_size")
     val CONTRAST = booleanPreferencesKey("high_contrast")
     val ONBOARDED = booleanPreferencesKey("onboarding_done")
+    val CONSENT = intPreferencesKey("cloud_consent")
 
     fun read(p: Preferences): VozSettings {
         val defaults = VozSettings()
@@ -63,6 +70,7 @@ object SettingsCodec {
             bubbleSize = BubbleSize.entries.firstOrNull { it.name == p[BUBBLE] } ?: defaults.bubbleSize,
             highContrast = p[CONTRAST] ?: defaults.highContrast,
             onboardingDone = p[ONBOARDED] ?: defaults.onboardingDone,
+            cloudConsent = p[CONSENT] ?: defaults.cloudConsent,
         ).sanitized()
     }
 
@@ -76,6 +84,7 @@ object SettingsCodec {
         p[BUBBLE] = s.bubbleSize.name
         p[CONTRAST] = s.highContrast
         p[ONBOARDED] = s.onboardingDone
+        p[CONSENT] = s.cloudConsent
     }
 }
 

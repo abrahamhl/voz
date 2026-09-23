@@ -30,11 +30,18 @@ class PlanValidator(private val detector: SensitiveTargetDetector = SensitiveTar
         if (errors.isNotEmpty()) return Result.Invalid(errors)
 
         val said = Normalize.forMatch(utterance?.text.orEmpty())
+        val cloud = plan.source == PlanSource.CLOUD
         val confirmations = plan.steps.mapIndexedNotNull { i, action ->
-            val target = sensitiveText(action) ?: return@mapIndexedNotNull null
-            detector.find(target)?.let { return@mapIndexedNotNull Confirmation(i, target, it) }
-            // Screen text can steer the cloud planner to any button: it may only press unasked what the user named.
-            if (plan.source == PlanSource.CLOUD && !named(target, said)) Confirmation(i, target, NOT_SAID) else null
+            when (action) {
+                is Action.Tap -> {
+                    detector.find(action.label)?.let { return@mapIndexedNotNull Confirmation(i, action.label, it) }
+                    // Screen text can steer the cloud planner to any button: it may only press unasked what the user named.
+                    if (cloud && !named(action.label, said)) Confirmation(i, action.label, NOT_SAID) else null
+                }
+                // A cloud search can carry screen text (a code, a name) to a web search: only what the user said goes unasked.
+                is Action.Search -> if (cloud && !named(action.query, said)) Confirmation(i, action.query, NOT_SAID) else null
+                else -> null
+            }
         }
         return Result.Valid(plan, confirmations)
     }
@@ -74,11 +81,6 @@ class PlanValidator(private val detector: SensitiveTargetDetector = SensitiveTar
         }
         if (value.length > max) errors += "step $i: $field is longer than $max"
         if (value.any { it.isISOControl() }) errors += "step $i: $field contains control characters"
-    }
-
-    private fun sensitiveText(a: Action): String? = when (a) {
-        is Action.Tap -> a.label
-        else -> null
     }
 
     companion object {

@@ -2,6 +2,7 @@ package dev.auxdesign.voz
 
 import android.app.Application
 import android.content.Context
+import android.view.accessibility.AccessibilityManager
 import dev.auxdesign.voz.a11y.ActionExecutor
 import dev.auxdesign.voz.core.route.Router
 import dev.auxdesign.voz.data.ActionLog
@@ -73,7 +74,7 @@ class AppGraph(app: Application) {
     val earcons = Earcons()
 
     private val cloudFactory = CloudEngineFactory(secrets)
-    val engines = EngineProvider(LocalEngine(), JevEngine(), cloudFactory::engine)
+    val engines = EngineProvider(LocalEngine(), JevEngine(), app.resources.getBoolean(R.bool.cloud_brain_available), cloudFactory::engine)
 
     val executor = ActionExecutor(app, strings, installedApps, YouTubeFlows())
 
@@ -89,5 +90,6 @@ class AppGraph(app: Application) {
         executor = executor,
         apps = installedApps,
         log = actionLog,
+        screenReaderOn = { app.getSystemService(AccessibilityManager::class.java)?.isTouchExplorationEnabled == true },
     )
 }

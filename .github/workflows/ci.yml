@@ -32,7 +32,17 @@ jobs:
       - name: Core unit tests
         run: ./gradlew --no-daemon :core:test
       - name: App unit tests, lint and debug build
-        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
+      - name: Release build has no network access and no cloud brain
+        run: |
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
+          aapt2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -n 1)
+          "$aapt2" dump permissions "$apk" > release-permissions.txt
+          cat release-permissions.txt
+          if grep -q "android.permission.INTERNET" release-permissions.txt; then echo "release APK must not request INTERNET"; exit 1; fi
+          "$aapt2" dump resources "$apk" | grep -A1 "bool/cloud_brain_available" > release-cloud.txt
+          cat release-cloud.txt
+          grep -q "false" release-cloud.txt || { echo "cloud brain must be off in release builds"; exit 1; }
       - name: Test summary
         if: always()
         run: python3 scripts/test-summary.py core app | tee -a "$GITHUB_STEP_SUMMARY"

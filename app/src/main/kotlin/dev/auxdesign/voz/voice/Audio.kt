@@ -52,6 +52,11 @@ class Earcons {
         tone?.startTone(ToneGenerator.TONE_PROP_NACK, 200)
     }
 
+    /** Success of an action that has no spoken reply (scroll, back, volume…). TODO(verify) it sounds distinct on device. */
+    fun done() {
+        tone?.startTone(ToneGenerator.TONE_PROP_BEEP2, 150)
+    }
+
     private companion object {
         const val VOLUME = 70
     }
