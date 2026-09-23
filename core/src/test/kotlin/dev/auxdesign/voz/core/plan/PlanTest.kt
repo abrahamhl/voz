@@ -46,16 +46,16 @@ class PlanTest {
 
     @Test
     fun `cloud tap on a label the user never said needs a spoken yes`() {
-        val steered = validator.validate(cloud(Action.Tap("Join")), Utterance("pon el primer vídeo", Lang.ES))
+        val steered = validator.validate(cloud(Action.Tap("Mix de gatos")), Utterance("pon el primer vídeo", Lang.ES))
         val valid = assertInstanceOf(PlanValidator.Result.Valid::class.java, steered)
-        assertEquals(listOf(PlanValidator.Confirmation(0, "Join", PlanValidator.NOT_SAID)), valid.confirmations)
+        assertEquals(listOf(PlanValidator.Confirmation(0, "Mix de gatos", PlanValidator.NOT_SAID)), valid.confirmations)
     }
 
     @Test
     fun `cloud tap on a label the user named, and local taps, need no extra yes`() {
         val named = validator.validate(cloud(Action.Tap("Siguiente")), Utterance("pulsa siguiente por favor", Lang.ES))
         assertTrue(assertInstanceOf(PlanValidator.Result.Valid::class.java, named).confirmations.isEmpty())
-        val local = validator.validate(Plan(listOf(Action.Tap("Join")), PlanSource.LOCAL_ENGINE), Utterance("pon el primer vídeo", Lang.ES))
+        val local = validator.validate(Plan(listOf(Action.Tap("Mix de gatos")), PlanSource.LOCAL_ENGINE), Utterance("pon el primer vídeo", Lang.ES))
         assertTrue(assertInstanceOf(PlanValidator.Result.Valid::class.java, local).confirmations.isEmpty())
     }
 
