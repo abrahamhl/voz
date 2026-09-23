@@ -135,4 +135,30 @@ class SafetyTest {
         assertEquals(UntrustedText.MAX_NODES, lines.size)
         assertTrue(lines.all { it.length < UntrustedText.MAX_CHARS + 20 })
     }
+
+    @ParameterizedTest(name = "masked: {0}")
+    @CsvSource(
+        "'Tu código es 482913','Tu código es [number]'",
+        "'Llama al 900 123 456','Llama al [number]'",
+        "'Visa 4242 4242 4242 4242','Visa [number]'",
+        "'IBAN NL91 ABNA 0417 1643 00','IBAN [iban]'",
+        "'Escribe a ana.perez@example.com','Escribe a [email]'",
+        "'+34 600 12 34 56','+[number]'",
+    )
+    fun `personal data is masked before it reaches the cloud`(raw: String, masked: String) {
+        assertEquals(masked, UntrustedText.mask(raw))
+    }
+
+    @ParameterizedTest(name = "kept: {0}")
+    @ValueSource(strings = ["Top 10 2024", "Alquilar 3,99 €", "Capítulo 12", "1.234 visualizaciones"])
+    fun `short numbers stay so labels remain tappable`(raw: String) {
+        assertEquals(raw, UntrustedText.mask(raw))
+    }
+
+    @Test
+    fun `the fenced screen never carries the masked data`() {
+        val fenced = UntrustedText.fence(ScreenSnapshot(null, listOf(ScreenNode(text = "Código 482913 para ana@example.com"))))
+        assertFalse(fenced.contains("482913"))
+        assertFalse(fenced.contains("ana@example.com"))
+    }
 }
