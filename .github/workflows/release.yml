@@ -10,7 +10,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
       - name: Secret scan
@@ -23,21 +23,93 @@ jobs:
         with:
           cache-provider: basic
           cache-read-only: true
-      - name: Test and build the demo APK
-        run: ./gradlew --no-daemon :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
-      - name: Prepare release files
+      - name: Check the tag matches versionName
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk voz-demo.apk
-          sha256sum voz-demo.apk > voz-demo.apk.sha256
+          tag_version="${GITHUB_REF_NAME#v}"
+          gradle_version="$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -n 1)"
+          echo "tag=$GITHUB_REF_NAME versionName=$gradle_version"
+          if [ "$tag_version" != "$gradle_version" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match versionName $gradle_version in app/build.gradle.kts"
+            exit 1
+          fi
+      - name: Tests, lint and release artifacts
+        id: build
+        env:
+          KEYSTORE_BASE64: ${{ secrets.VOZ_KEYSTORE_BASE64 }}
+          VOZ_KEYSTORE_PASSWORD: ${{ secrets.VOZ_KEYSTORE_PASSWORD }}
+          VOZ_KEY_ALIAS: ${{ secrets.VOZ_KEY_ALIAS }}
+          VOZ_KEY_PASSWORD: ${{ secrets.VOZ_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            export VOZ_KEYSTORE_FILE="$RUNNER_TEMP/release.keystore"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::VOZ_KEYSTORE_BASE64 is not set; the release artifact will be UNSIGNED."
+          fi
+          ./gradlew --no-daemon :core:test :app:testDebugUnitTest :app:lintDebug \
+            :app:assembleDebug :app:assembleRelease :app:bundleRelease
+      - name: Verify the release cannot reach the network
+        run: |
+          set -euo pipefail
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
+          aab=$(ls app/build/outputs/bundle/release/*.aab | head -n 1)
+          bash scripts/verify-release.sh "$apk" "$aab"
+      - name: Dependency inventory
+        run: ./gradlew --no-daemon :app:dependencies --configuration releaseRuntimeClasspath > dependency-inventory.txt
+      - name: Prepare release files
+        id: prepare
+        env:
+          SIGNED: ${{ steps.build.outputs.signed }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
+          aab=$(ls app/build/outputs/bundle/release/*.aab | head -n 1)
+          suffix=""
+          [ "$SIGNED" = "true" ] || suffix="-UNSIGNED"
+          cp "$apk" "voz-$version$suffix.apk"
+          cp "$aab" "voz-$version$suffix.aab"
+          files="voz-$version$suffix.apk voz-$version$suffix.aab"
+          if [ "$SIGNED" != "true" ]; then
+            cp app/build/outputs/apk/debug/app-debug.apk "voz-$version-demo-debug.apk"
+            files="$files voz-$version-demo-debug.apk"
+          fi
+          files="$files dependency-inventory.txt"
+          sha256sum $files > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          {
+            echo "version=$version"
+            echo "signed=$SIGNED"
+            echo "files=$files"
+          } >> "$GITHUB_OUTPUT"
+      - name: Build release notes
+        env:
+          VOZ_RELEASE_SIGNED: ${{ steps.build.outputs.signed }}
+        run: |
+          set -euo pipefail
           python3 scripts/release-notes.py "$GITHUB_REF_NAME" > release-notes.md
-          echo "" >> release-notes.md
-          echo "### Verified by CI for this tag" >> release-notes.md
-          python3 scripts/test-summary.py core app >> release-notes.md
+          {
+            echo ""
+            echo "### Verified by CI for this tag"
+            echo ""
+            python3 scripts/test-summary.py core app
+            echo ""
+            echo "### Artifacts (SHA-256)"
+            echo ""
+            echo '```'
+            cat SHA256SUMS.txt
+            echo '```'
+          } >> release-notes.md
+          cat release-notes.md
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" voz-demo.apk voz-demo.apk.sha256 \
+          gh release create "$GITHUB_REF_NAME" \
+            ${{ steps.prepare.outputs.files }} SHA256SUMS.txt \
             --title "VOZ $GITHUB_REF_NAME" \
             --notes-file release-notes.md \
             --verify-tag
