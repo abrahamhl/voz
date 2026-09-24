@@ -78,7 +78,7 @@ class SensitiveTargetDetector {
         )
         // Navigation labels are common harmless targets. Treat them as sensitive
         // only when they carry additional context, such as "Continue to payment".
-        val GENERIC_NAVIGATION = setOf("continue", "next", "done", "siguiente", "volgende", "doorgaan", "voltooien")
+        val GENERIC_NAVIGATION = setOf("next", "done", "siguiente", "volgende", "doorgaan", "voltooien")
         val SAFE_NAVIGATION_PHRASES = setOf("pagina siguiente", "next page", "volgende pagina")
         val STEMS = listOf(
             "purchas", "checkout", "delet", "transfer", "eliminar", "suprim", "verwijder", "overmak", "overboek",
