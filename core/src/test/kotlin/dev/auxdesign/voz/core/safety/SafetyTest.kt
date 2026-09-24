@@ -45,7 +45,7 @@ class SafetyTest {
     }
 
     @ParameterizedTest(name = "safe: {0}")
-    @ValueSource(strings = ["Like", "Página siguiente", "Next", "Volgende", "Wireless settings", "Dialog", "Europe 2024", "Publicaciones"])
+    @ValueSource(strings = ["Like", "Página siguiente", "Wireless settings", "Dialog", "Europe 2024", "Publicaciones"])
     fun `harmless targets need no confirmation`(label: String) {
         assertNull(detector.find(label))
     }

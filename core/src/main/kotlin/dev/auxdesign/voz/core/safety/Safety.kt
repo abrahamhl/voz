@@ -42,6 +42,7 @@ class SensitiveTargetDetector {
         val tokens = Normalize.tokens(text)
         if (tokens.isEmpty()) return null
         val joined = tokens.joinToString(" ")
+        if (joined in SAFE_NAVIGATION_PHRASES) return null
         PHRASES.firstOrNull { " $it " in " $joined " }?.let { return it }
         for (t in tokens) {
             if (t in EXACT && !(t in GENERIC_NAVIGATION && tokens.size == 1)) return t
@@ -78,6 +79,7 @@ class SensitiveTargetDetector {
         // Navigation labels are common harmless targets. Treat them as sensitive
         // only when they carry additional context, such as "Continue to payment".
         val GENERIC_NAVIGATION = setOf("continue", "next", "done", "siguiente", "volgende", "doorgaan", "voltooien")
+        val SAFE_NAVIGATION_PHRASES = setOf("pagina siguiente", "next page", "volgende pagina")
         val STEMS = listOf(
             "purchas", "checkout", "delet", "transfer", "eliminar", "suprim", "verwijder", "overmak", "overboek",
             "subscrib", "unsubscrib", "suscrib", "abonne", "alquil", "permit", "toesta", "instal", "accept", "acept",
