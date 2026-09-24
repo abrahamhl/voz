@@ -35,7 +35,7 @@ class LocalPlanner {
         }
         val label = bestLabel
         val explicitAction = ACTION_WORDS.any { said == it || said.startsWith("$it ") }
-        val exact = label != null && Normalize.forMatch(label) == said
+        val exact = label != null && Normalize.forMatch(label) == query
         if (label != null && bestScore >= MIN_LABEL_SCORE && (exact || explicitAction) && bestScore - secondScore >= MIN_MARGIN) {
             return EngineResult.Planned(Plan(listOf(Action.Tap(Normalize.collapse(label))), PlanSource.LOCAL_ENGINE))
         }

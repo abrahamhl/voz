@@ -44,7 +44,7 @@ class SensitiveTargetDetector {
         val joined = tokens.joinToString(" ")
         PHRASES.firstOrNull { " $it " in " $joined " }?.let { return it }
         for (t in tokens) {
-            if (t in EXACT) return t
+            if (t in EXACT && !(t in GENERIC_NAVIGATION && tokens.size == 1)) return t
             STEMS.firstOrNull { t.startsWith(it) }?.let { return t }
         }
         // Normalizing drops currency signs, so prices are matched on the raw text ("Alquilar 3,99 €").
@@ -75,6 +75,9 @@ class SensitiveTargetDetector {
             "plaatsen", "publiceren", "publiceer", "legen", "leegmaken", "indienen", "doorgaan", "volgende",
             "voltooien", "opslaan", "autoriseren", "verifiëren", "activeren", "inloggen", "aanvaarden", "instemmen",
         )
+        // Navigation labels are common harmless targets. Treat them as sensitive
+        // only when they carry additional context, such as "Continue to payment".
+        val GENERIC_NAVIGATION = setOf("continue", "next", "done", "siguiente", "volgende", "doorgaan", "voltooien")
         val STEMS = listOf(
             "purchas", "checkout", "delet", "transfer", "eliminar", "suprim", "verwijder", "overmak", "overboek",
             "subscrib", "unsubscrib", "suscrib", "abonne", "alquil", "permit", "toesta", "instal", "accept", "acept",
