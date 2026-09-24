@@ -7,10 +7,10 @@ A working checklist of the rules VOZ must meet, what the code already does, and 
 
 | Rule | Source | VOZ today | Open |
 |---|---|---|---|
-| AccessibilityService API: autonomous planning and acting is prohibited, **except** for verified accessibility tools whose core purpose is assisting people with disabilities | [Play policy](https://support.google.com/googleplay/android-developer/answer/10964491) | `isAccessibilityTool="true"`; disability-first positioning in the app, README and pitch; only acts on the user's command | Store listing and declaration evidence ([draft](PLAY_ACCESSIBILITY_DECLARATION.md)); a real demo video |
-| User Data: prominent in-app disclosure and affirmative consent before permission requests, for data use the user may not expect | [Play policy](https://support.google.com/googleplay/android-developer/answer/10144311) | The setup steps explain the microphone and the accessibility service (what is read, when, and that nothing is kept or sent) before sending the user to system settings. The pilot-only cloud brain has its own consent screen. | Privacy policy at a stable public URL, linked in the listing and in the app |
+| AccessibilityService API: autonomous planning and acting is prohibited, **except** for verified accessibility tools whose core purpose is assisting people with disabilities | [Play policy](https://support.google.com/googleplay/android-developer/answer/10964491) | `isAccessibilityTool="true"` declares the intended assistive purpose; it is not approval. The app is designed to act only after a user command. | Store listing, declaration evidence ([internal draft](PLAY_ACCESSIBILITY_DECLARATION.md)), exact-artifact demo video and Play review |
+| User Data: prominent in-app disclosure and affirmative consent before permission requests, for data use the user may not expect | [Play policy](https://support.google.com/googleplay/android-developer/answer/10144311) | The setup steps explain the microphone and accessibility service (what is read, when, and what VOZ itself stores or sends) before sending the user to system settings. Android speech providers and destination apps have separate data handling. The pilot-only cloud brain has its own consent screen. | Privacy policy at a stable public URL, linked in the listing and in the app |
 | Microphone foreground service: declare the type and use case, with a video | [Play help](https://support.google.com/googleplay/android-developer/answer/13392821) | `foregroundServiceType="microphone"`, `FOREGROUND_SERVICE_MICROPHONE`; started only from visible UI | Declaration text (in the draft) and a device video |
-| Data safety form | Play Console | Release build: no data collected, none shared, nothing leaves the device | Fill in at submission |
+| Data safety form | Play Console | VOZ has no account, analytics or backend; release VOZ has no `INTERNET` permission. Android speech recognition and destination apps may have their own network behavior. | Fill in from the exact artifact and provider/device matrix at submission |
 | Testing requirements for new personal developer accounts (closed test before production) | Play Console (reported by the distribution audit) | — | [VERIFY at submission] |
 
 ## 2. Google Gemini API (cloud brain)
@@ -32,8 +32,8 @@ VOZ acts while other apps are in front, so this path doesn't fit its core use.
 
 ## 4. EU General Data Protection Regulation
 
-- VOZ processes screen text, speech transcripts and the history **on the device only**. The publisher receives no
-  personal data. No analytics, crash reporting or ads SDKs.
+- VOZ processes screen text, speech transcripts and history in its own process without a VOZ backend. Android's speech
+  provider and destination apps may process data under their own policies. No analytics, crash reporting or ads SDKs.
 - Data minimisation: dictated or unrecognised speech is stored only as a character count; the history is capped at
   200 entries; backups and device transfer are excluded.
 - Accessibility use can reveal a disability (special-category data). Nothing leaves the phone in release builds. A
@@ -51,7 +51,7 @@ VOZ acts while other apps are in front, so this path doesn't fit its core use.
 
 The European Accessibility Act covers listed products and services such as smartphones, operating systems, banking and
 e-commerce ([European Commission](https://commission.europa.eu/strategy-and-policy/policies/justice-and-fundamental-rights/disability/union-equality-strategy-rights-persons-disabilities-2021-2030/european-accessibility-act_en)).
-Whether a standalone assistive app is in scope is [COUNSEL]. VOZ aims for WCAG 2.2 AA anyway:
+Whether a standalone assistive app is in scope is [COUNSEL]. VOZ is designed against selected accessibility principles; this is not a WCAG 2.2 AA conformance claim:
 
 | WCAG 2.2 | How VOZ addresses it | Verified |
 |---|---|---|

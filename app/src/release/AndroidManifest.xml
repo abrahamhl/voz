@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Release builds have no cloud brain, so they don't need the network at all: removing the permission makes
-    "nothing leaves the phone" a guarantee Android enforces, not a promise. Search results open in the browser,
-    which has its own network access. CI checks the release APK for this.
+    Release builds contain no cloud planner and the VOZ process does not request INTERNET. This constrains network
+    access by VOZ itself; Android's speech provider and destination apps may have their own network behavior. CI checks
+    the merged release artifact for the permission.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">

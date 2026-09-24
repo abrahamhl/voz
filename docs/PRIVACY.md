@@ -1,7 +1,8 @@
 # Privacy
 
-VOZ is built for people who depend on it to use their phone. Their trust matters more than any metric, so the design
-collects nothing.
+VOZ is built for people who depend on it to use their phone. Their trust matters more than any metric, so VOZ itself
+has no accounts, advertising, analytics or backend. This policy distinguishes the VOZ process from Android services and
+other apps that VOZ may invoke.
 
 ## What VOZ does not do
 
@@ -55,7 +56,10 @@ Switch it off or delete the key at any time in Settings.
 
 ## Internet permission
 
-Release builds do not request the internet permission at all, so Android itself prevents VOZ from sending anything (CI checks the release APK on every commit). Developer and pilot builds request it only for the cloud brain. Web search results open in your browser, which has its own access.
+Release builds do not request the internet permission, so the VOZ process cannot use ordinary network access (CI checks
+the final artifact). This does not prevent Android's speech-recognition provider, the browser, or another app opened by
+VOZ from communicating under that app's permissions and policies. Developer and pilot builds request it only for the
+experimental cloud brain. Web search results open in the destination app, which has its own access.
 
 ## Who is responsible
 

@@ -167,12 +167,10 @@ class VoiceSession(
         val outcome = withContext(Dispatchers.Default) {
             router.route(utterance, executor.snapshot(), apps.matcher(), engines.planners(s))
         }
-        // Only a recognised command is stored word for word; dictation and anything not understood may hold private text.
-        val verbatim = outcome is Router.Outcome.Kill ||
-            (outcome is Router.Outcome.Ready && outcome.plan.steps.none { it is Action.Type })
         val redacted = strings.get(lang, R.string.log_heard_redacted, utterance.text.length)
-        log.add(LogEntry.Kind.HEARD, if (verbatim) utterance.text else redacted)
-        if (outcome is Router.Outcome.Ready && !verbatim) shownHeard = redacted
+        // Spoken text can contain searches, names or secrets even when it parsed successfully.
+        // Keep only its length in the persistent audit trail; the live UI may still show it this turn.
+        log.add(LogEntry.Kind.HEARD, redacted)
         when (outcome) {
             Router.Outcome.Kill -> end(lang, Turn.Finished(shownHeard, Turn.Result.STOPPED), R.string.say_stopped)
             is Router.Outcome.Ready -> run(outcome, lang, s)

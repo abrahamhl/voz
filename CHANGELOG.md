@@ -46,7 +46,7 @@ First demo build. Debug-signed APK for sideloading; not published on Google Play
 
 ### Security
 - Sensitive taps are re-confirmed against the label and container actually pressed, not only the words spoken.
-- The accessibility service is declared as an accessibility tool (`isAccessibilityTool`), as required by Google Play for assistive automation.
+- The accessibility service declares the app's intended assistive purpose with `isAccessibilityTool`; this is a declaration for Play review, not approval.
 - Dictated text is stored in the action log only as its length.
 
 ### Fixed (from the pre-release review)

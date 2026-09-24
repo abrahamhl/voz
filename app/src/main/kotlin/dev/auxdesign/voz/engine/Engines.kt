@@ -42,8 +42,9 @@ class JevEngine : DecisionEngine {
 }
 
 /**
- * Chooses which brains to ask, in order. On-phone brains first, so nothing leaves the phone when they can handle
- * the command; the cloud last, and only when the user turned it on, accepted the privacy notice and saved a key.
+ * Chooses which brains to ask, in order. On-phone brains go first, reducing cloud exposure when they can handle the
+ * command; the cloud last, and only when the user turned it on, accepted the privacy notice and saved a key. Android
+ * speech recognition and destination apps remain separate data paths.
  */
 class EngineProvider(
     private val local: LocalEngine,

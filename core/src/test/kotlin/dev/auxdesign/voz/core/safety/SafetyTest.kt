@@ -161,4 +161,21 @@ class SafetyTest {
         assertFalse(fenced.contains("482913"))
         assertFalse(fenced.contains("ana@example.com"))
     }
+
+    @Test
+    fun `secret fields are excluded from spoken and cloud screen data`() {
+        val snapshot = ScreenSnapshot(null, listOf(
+            ScreenNode(text = "Password hunter2", password = true),
+            ScreenNode(text = "Continue", clickable = true),
+        ))
+        assertEquals(listOf("Continue"), snapshot.readableLines())
+        assertFalse(UntrustedText.fence(snapshot).contains("hunter2"))
+    }
+
+    @Test
+    fun `generic authorization workflow labels require confirmation`() {
+        assertTrue(detector.isSensitive("Submit"))
+        assertTrue(detector.isSensitive("Continue"))
+        assertTrue(detector.isSensitive("Autoriseren"))
+    }
 }

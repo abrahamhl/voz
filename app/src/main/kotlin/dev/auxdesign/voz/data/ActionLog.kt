@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
@@ -51,7 +53,12 @@ class ActionLog(
     private fun persist(list: List<LogEntry>) {
         val f = file ?: return
         io.execute {
-            runCatching { f.writeText(list.joinToString("\n") { json.encodeToString(LogEntry.serializer(), it) }) }
+            runCatching {
+                f.parentFile?.mkdirs()
+                val tmp = File(f.parentFile, ".${f.name}.tmp")
+                tmp.writeText(list.joinToString("\n") { json.encodeToString(LogEntry.serializer(), it) })
+                Files.move(tmp.toPath(), f.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+            }
         }
     }
 
