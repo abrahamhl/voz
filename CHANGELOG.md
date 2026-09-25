@@ -16,6 +16,7 @@ Release-candidate work targeting `0.2.0-rc1` (the `versionName` in `app/build.gr
 - A question that could not be spoken counts as "no".
 - Personal data (e-mail, IBAN, codes, phone and card numbers) is masked before the cloud planner sees the screen; the app name in front is no longer sent; on-phone brains are asked first.
 - Backups and device-to-device transfer of app data are excluded.
+- Disguised labels no longer skip the spoken "yes": sensitive-action, price, prompt-injection and cloud-reply checks now run on a canonical form of the text (invisible format characters removed, NFKC, Cyrillic/Greek look-alikes mapped), so "Ｐａｙ ｎｏｗ", "𝐏𝐚𝐲", "Pаy" with a Cyrillic "а" or "Pa​y" are treated like "Pay". Regression tests cover each variant.
 
 ### Changed
 - The Gemini cloud brain is available only in developer and pilot builds, behind a consent screen that states Google's Gemini API terms (professional use, adults, paid keys in the EEA/CH/UK). Release builds exclude its planner and HTTP client, and drop the internet permission.

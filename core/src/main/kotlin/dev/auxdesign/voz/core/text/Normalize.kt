@@ -29,6 +29,33 @@ object Normalize {
 
     fun collapse(s: String): String = SPACES.replace(s, " ").trim()
 
+    private val FORMAT = Regex("\\p{Cf}")
+
+    /** Lowercase Cyrillic and Greek letters that render like Latin ones ("Pаy" with a Cyrillic "а"). */
+    private val CONFUSABLES = mapOf(
+        'а' to 'a', 'е' to 'e', 'ё' to 'e', 'і' to 'i', 'ј' to 'j', 'к' to 'k', 'м' to 'm', 'н' to 'h', 'о' to 'o',
+        'р' to 'p', 'с' to 'c', 'ѕ' to 's', 'т' to 't', 'у' to 'y', 'х' to 'x', 'ԁ' to 'd', 'ԛ' to 'q', 'ԝ' to 'w',
+        'α' to 'a', 'ε' to 'e', 'ι' to 'i', 'κ' to 'k', 'ν' to 'v', 'ο' to 'o', 'ρ' to 'p', 'τ' to 't', 'υ' to 'u',
+        'χ' to 'x',
+    )
+
+    /**
+     * Safety-only canonical form of untrusted screen text: drops invisible format characters (zero-width, soft
+     * hyphen, bidi marks), applies NFKC (full-width and math-styled letters and digits become plain ones) and maps
+     * Latin look-alikes. Not length-preserving; use it for detection, never for payload ranges. Over-matching only
+     * costs an extra spoken confirmation.
+     */
+    fun canonical(s: String): String {
+        val nfkc = Normalizer.normalize(FORMAT.replace(s, ""), Normalizer.Form.NFKC)
+        val sb = StringBuilder(nfkc.length)
+        for (c in nfkc) {
+            val lower = c.lowercaseChar()
+            val mapped = CONFUSABLES[lower]
+            sb.append(if (mapped != null) (if (c.isUpperCase()) mapped.uppercaseChar() else mapped) else c)
+        }
+        return sb.toString()
+    }
+
     private fun baseChar(c: Char): Char {
         if (c.isSurrogate()) return ' '
         val decomposed = Normalizer.normalize(c.toString(), Normalizer.Form.NFD)
