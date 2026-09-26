@@ -39,7 +39,8 @@ class SensitiveTargetDetector {
 
     /** Returns the matched sensitive term, or null. */
     fun find(text: String?): String? {
-        val tokens = Normalize.tokens(text)
+        val canon = Normalize.canonical(text ?: return null)
+        val tokens = Normalize.tokens(canon)
         if (tokens.isEmpty()) return null
         val joined = tokens.joinToString(" ")
         if (joined in SAFE_NAVIGATION_PHRASES) return null
@@ -49,7 +50,7 @@ class SensitiveTargetDetector {
             STEMS.firstOrNull { t.startsWith(it) }?.let { return t }
         }
         // Normalizing drops currency signs, so prices are matched on the raw text ("Alquilar 3,99 €").
-        return PRICE.find(text.orEmpty())?.value?.trim()
+        return PRICE.find(canon)?.value?.trim()
     }
 
     fun isSensitive(text: String?): Boolean = find(text) != null
@@ -111,8 +112,10 @@ object CloudReply {
     fun speakable(say: String?): String? {
         val s = Normalize.collapse(say ?: return null)
         if (s.isEmpty() || s.length > MAX_CHARS) return null
-        if (s.any { it.isDigit() } || '@' in s || LINK.containsMatchIn(s)) return null
-        if (UntrustedText.looksLikeInjection(s) || detector.isSensitive(s)) return null
+        // Checks run on the canonical form so "ｗｗｗ．evil．com" or "llama al ９００" cannot slip through.
+        val c = Normalize.canonical(s)
+        if (c.any { it.isDigit() } || '@' in c || LINK.containsMatchIn(c)) return null
+        if (UntrustedText.looksLikeInjection(c) || detector.isSensitive(c)) return null
         return s
     }
 }
@@ -165,7 +168,7 @@ object UntrustedText {
     ).map { Regex(it) }
 
     fun looksLikeInjection(text: String?): Boolean {
-        val n = Normalize.forMatch(text ?: return false)
+        val n = Normalize.forMatch(Normalize.canonical(text ?: return false))
         return INJECTION.any { it.containsMatchIn(n) }
     }
 
