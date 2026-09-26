@@ -4,6 +4,18 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// Release signing is driven by environment variables so no secret ever lives in the repo.
+// CI decodes the keystore and exports these; without them the release build stays unsigned
+// and the release workflow publishes it with an explicit -UNSIGNED suffix.
+val releaseKeystoreFile = System.getenv("VOZ_KEYSTORE_FILE")
+    ?.takeIf { it.isNotBlank() }
+    ?.let { rootProject.file(it) }
+
+val releaseSigningReady: Boolean = releaseKeystoreFile?.exists() == true &&
+    !System.getenv("VOZ_KEYSTORE_PASSWORD").isNullOrBlank() &&
+    !System.getenv("VOZ_KEY_ALIAS").isNullOrBlank() &&
+    !System.getenv("VOZ_KEY_PASSWORD").isNullOrBlank()
+
 android {
     namespace = "dev.auxdesign.voz"
     compileSdk = 37
@@ -23,6 +35,27 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    signingConfigs {
+        if (releaseSigningReady) {
+            create("release") {
+                storeFile = releaseKeystoreFile
+                storePassword = System.getenv("VOZ_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("VOZ_KEY_ALIAS")
+                keyPassword = System.getenv("VOZ_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // Signing is applied only when the CI secrets are present; otherwise the
+            // artifact is produced unsigned rather than falling back to a debug key.
+            if (releaseSigningReady) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
     }
 
     lint {
