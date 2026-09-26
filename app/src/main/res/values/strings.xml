@@ -53,7 +53,7 @@
     <string name="onb_body_mic">VOZ only listens after you tap the mic, and stops when you tap it again. Your phone’s speech service turns your voice into text.</string>
     <string name="onb_btn_mic">Allow microphone</string>
     <string name="onb_title_a11y">Accessibility service</string>
-    <string name="onb_body_a11y">VOZ needs its accessibility service to read the text on the screen and to tap, scroll and type for you. It reads the screen only when you give a command, keeps nothing of what it reads, and sends none of it anywhere unless you turn on a cloud feature yourself.</string>
+    <string name="onb_body_a11y">VOZ needs its accessibility service to read the text on the screen and to tap, scroll and type for you. VOZ reads the screen only when you give a command and does not upload it to a VOZ server. Android speech recognition and other apps may have their own network behavior.</string>
     <string name="onb_a11y_warning">Android will warn that VOZ can take full control of your phone. Every screen reader and voice-control app gets this warning. VOZ only acts on a command you give, and asks before anything that sends, pays, deletes or calls.</string>
     <string name="onb_btn_a11y">Open accessibility settings</string>
     <string name="onb_restricted_title">Android says “Restricted setting”? (Android 13 and later)</string>
@@ -155,7 +155,7 @@
     <string name="settings_cloud_pilot">Test feature for developer and pilot builds. Public versions of VOZ don’t include it.</string>
     <string name="settings_cloud">Cloud brain (Gemini)</string>
     <string name="settings_cloud_no_key">Add your own Gemini API key first.</string>
-    <string name="settings_cloud_off_status">Off: everything stays on this phone.</string>
+    <string name="settings_cloud_off_status">Off: VOZ does not send screen data to its experimental cloud feature.</string>
     <string name="settings_cloud_on_status">On: only commands VOZ can’t handle on the phone are sent to Google Gemini.</string>
     <string name="settings_key_saved">A key is saved on this phone, encrypted.</string>
     <string name="settings_key_how">Use your own paid Gemini API key from aistudio.google.com. It is stored encrypted on this phone and never shown again.</string>
@@ -210,7 +210,7 @@
     <string name="about_speech_body">Your phone’s speech service turns your voice into text. VOZ asks for on-device recognition first; if the language pack is missing, the phone’s online service may be used. Replies are spoken by your phone’s text-to-speech engine.</string>
     <string name="about_cloud_title">Cloud brain</string>
     <string name="about_cloud_body">Off by default. When you turn it on, only commands VOZ can’t handle on the phone are sent to Google Gemini, with the text on the screen, personal numbers and e-mail addresses masked. Your voice and the name of the app in front are never sent.</string>
-    <string name="about_cloud_body_off">This version has no cloud brain: everything VOZ understands and does stays on this phone.</string>
+    <string name="about_cloud_body_off">This version has no cloud brain. VOZ does not send screen data to a VOZ server; Android speech recognition and destination apps may have their own network behavior.</string>
     <string name="about_permissions_title">Permissions and why</string>
     <string name="about_perm_mic">Microphone: to hear your command, only after you tap the mic.</string>
     <string name="about_perm_a11y">Accessibility service: to read the screen and tap, scroll and type when you ask.</string>

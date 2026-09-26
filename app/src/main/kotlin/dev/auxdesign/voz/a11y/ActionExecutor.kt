@@ -183,8 +183,11 @@ class ActionExecutor(
         // Check what will really be pressed (matched text, the clickable container and the texts inside it), not
         // what the user said: "borrar" may match "Borrar cuenta", and "Visa" may sit inside a "Pagar 49,99 €" row.
         val risky = target.riskLabels.filter { detector.isSensitive(it) }
-        val confirmed = env.confirmedTarget?.let(Normalize::forMatch)
-        if (risky.isNotEmpty() && risky.any { Normalize.forMatch(it) != confirmed }) {
+        if (env.confirmedTarget != null) {
+            // Plan-level confirmation (for example a cloud-inferred harmless tap) still
+            // needs a fresh identity check, but must not ask the user twice.
+            target = NodeFinder.recheck(target, service?.root(), label) ?: return fail(env, R.string.say_screen_changed)
+        } else if (risky.isNotEmpty()) {
             // Name the most informative label (the one with the amount), capped so the question stays short.
             val what = risky.maxBy { it.length }.take(MAX_CONFIRM_LABEL)
             if (!env.confirm(strings.get(env.lang, R.string.confirm_tap, what))) return cancelled(env)

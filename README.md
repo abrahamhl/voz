@@ -18,7 +18,7 @@ commands, and Gemini. VOZ doesn’t claim to replace them. It aims at the gaps a
   [source](https://support.google.com/accessibility/android/answer/6151848?hl=en)). VOZ understands Dutch, Spanish and
   English commands with an offline grammar.
 - **Local first, no account.** The command grammar runs on the phone. VOZ has no accounts, no analytics and no servers.
-- **Safety by design.** Screen content is treated as hostile. A fixed list of 19 actions, a spoken or on-screen
+- **Safety by design.** Screen content is treated as hostile. A fixed action vocabulary, a spoken or on-screen
   confirmation before risky taps, no guessing between identical buttons, and a re-check of the screen after you say “yes”.
 - **Honest feedback.** The mic turns yellow only when it is really listening. Every result is spoken and shown with a
   text, never with colour alone. Failures offer one clear way out.
@@ -71,16 +71,16 @@ on labels inside the YouTube app that have not been checked on a device yet.
   cloud planner and HTTP client, set `cloud_brain_available=false`, and drop the internet permission; CI verifies the
   release artifact.
   In pilot builds it is off by default and needs your own key plus an explicit consent screen. When it is on, only
-  commands VOZ can’t handle on the phone are sent, with the screen text, and e-mail addresses, IBANs and long numbers
-  masked first.
+  commands VOZ can’t handle on the phone are sent, with screen text filtered for known secret fields and common
+  identifiers. This is experimental and does not guarantee that arbitrary private content is identified.
 
-Details: [Privacy](docs/PRIVACY.md) · [Security](SECURITY.md) · [Compliance](docs/COMPLIANCE.md) · [Architecture](docs/ARCHITECTURE.md)
+Details: [Privacy](docs/PRIVACY.md) · [Security](SECURITY.md) · [Compliance](docs/COMPLIANCE.md) · [Architecture](docs/ARCHITECTURE.md) · [Audit](docs/AUDIT_2026-09.md) · [Readiness](docs/READINESS.md) · [Deployment](docs/DEPLOYMENT.md)
 
 ## What is verified
 
 | Area | Evidence |
 |---|---|
-| Grammar, routing, validation, safety rules | JVM unit tests in CI (300+) |
+| Grammar, routing, validation, safety rules | JVM unit tests in CI; exact count belongs to the linked run |
 | App logic (tap resolution, confirmations, settle timing, bubble bounds, consent gate) | JVM unit tests in CI |
 | Build, lint (0 errors), secret scan | CI on every commit |
 | Speech recognition, text-to-speech, taps in real apps, TalkBack coexistence, Android 13+ install path | **Not yet verified** · [device validation pack](docs/DEVICE_VALIDATION.md) |
@@ -100,7 +100,7 @@ validation, ranking, safety) and `:app` (Android, Jetpack Compose).
 
 ## More
 
-[Device validation](docs/DEVICE_VALIDATION.md) · [Pitch](docs/PITCH.md) · [Business model](docs/BUSINESS_MODEL.md) ·
+[Device validation](docs/DEVICE_VALIDATION.md) · [Audit](docs/AUDIT_2026-09.md) · [Readiness](docs/READINESS.md) · [Deployment](docs/DEPLOYMENT.md) · [Pitch](docs/PITCH.md) · [Business model](docs/BUSINESS_MODEL.md) ·
 [Demo script](docs/DEMO_SCRIPT.md) · [Play accessibility declaration (draft)](docs/PLAY_ACCESSIBILITY_DECLARATION.md) ·
 [Contributing](CONTRIBUTING.md) · [Code of conduct](CODE_OF_CONDUCT.md) · [Changelog](CHANGELOG.md)
 

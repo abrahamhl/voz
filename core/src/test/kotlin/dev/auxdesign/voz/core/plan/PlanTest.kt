@@ -168,4 +168,11 @@ class PlanTest {
         assertEquals(listOf(Action.Tap("Suscribirse")), planned.plan.steps)
         assertInstanceOf(EngineResult.NoPlan::class.java, LocalPlanner().plan(PlanRequest(Utterance("haz magia", Lang.ES), screen)))
     }
+
+    @Test
+    fun `local planner does not fuzzy tap without an action verb`() {
+        val screen = ScreenSnapshot("com.example", listOf(ScreenNode(text = "Settings", clickable = true)))
+        assertInstanceOf(EngineResult.NoPlan::class.java, LocalPlanner().plan(PlanRequest(Utterance("setting", Lang.EN), screen)))
+        assertInstanceOf(EngineResult.Planned::class.java, LocalPlanner().plan(PlanRequest(Utterance("tap setting", Lang.EN), screen)))
+    }
 }

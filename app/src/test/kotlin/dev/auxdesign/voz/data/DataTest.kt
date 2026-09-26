@@ -155,4 +155,12 @@ class ActionLogTest {
         file.writeText("garbage\n{\"at\":1,\"kind\":\"DONE\",\"text\":\"ok\"}\n")
         assertEquals(listOf(LogEntry(1, LogEntry.Kind.DONE, "ok")), ActionLog(file).entries.value)
     }
+
+    @Test
+    fun `history writes leave no temporary artifact`(@TempDir dir: File) {
+        val file = File(dir, "log.jsonl")
+        ActionLog(file, io = direct).add(LogEntry.Kind.HEARD, "length 12")
+        assertTrue(file.isFile)
+        assertFalse(File(dir, ".log.jsonl.tmp").exists())
+    }
 }

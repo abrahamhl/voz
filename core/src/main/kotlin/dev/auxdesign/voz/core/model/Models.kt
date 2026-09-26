@@ -32,6 +32,8 @@ data class ScreenNode(
     val className: String? = null,
     val clickable: Boolean = false,
     val editable: Boolean = false,
+    /** Secret-bearing fields must never be spoken or exported to a planner. */
+    val password: Boolean = false,
     val scrollable: Boolean = false,
     val depth: Int = 0,
 ) {
@@ -47,6 +49,7 @@ data class ScreenSnapshot(val packageName: String?, val nodes: List<ScreenNode>)
         val seen = HashSet<String>()
         val out = ArrayList<String>()
         for (node in nodes) {
+            if (node.password) continue
             val label = node.label?.let(Normalize::collapse) ?: continue
             if (label.length < 2) continue
             val key = Normalize.forMatch(label)

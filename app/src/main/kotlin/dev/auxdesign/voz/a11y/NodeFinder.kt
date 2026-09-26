@@ -90,7 +90,7 @@ object NodeFinder {
         if (query.isEmpty()) return null
         var best: Hit? = null
         walk(root) { node ->
-            if (!node.isVisible) return@walk
+            if (!isSafeForMatching(node)) return@walk
             for (raw in listOfNotNull(node.text, node.description)) {
                 val score = scoreNode(query, raw, node) ?: continue
                 val current = best
@@ -108,7 +108,7 @@ object NodeFinder {
         // Distinct places that would be pressed; the same control reached twice has the same bounds.
         val places = hashSetOf(target.bounds)
         walk(root) { node ->
-            if (!node.isVisible) return@walk
+            if (!isSafeForMatching(node)) return@walk
             val tie = listOfNotNull(node.text, node.description).any { raw ->
                 (scoreNode(query, raw, node) ?: return@any false) >= best.score - TIE_EPSILON
             }
@@ -129,15 +129,17 @@ object NodeFinder {
     /** Texts of the visible views inside [container], bounded (a whole-screen container must not flood the check). */
     fun innerLabels(container: UiNode, max: Int = MAX_INNER_LABELS, maxDepth: Int = MAX_INNER_DEPTH): List<String> {
         val out = ArrayList<String>()
-        val stack = ArrayDeque<Pair<UiNode, Int>>()
-        container.children.asReversed().forEach { stack.addLast(it to 1) }
+        val stack = ArrayDeque<Triple<UiNode, Int, Boolean>>()
+        container.children.asReversed().forEach { stack.addLast(Triple(it, 1, false)) }
         while (stack.isNotEmpty() && out.size < max) {
-            val (node, depth) = stack.removeLast()
-            if (!node.isVisible) continue
+            val (node, depth, secretAncestor) = stack.removeLast()
+            if (!node.isVisible || secretAncestor || node.isPassword) continue
             listOfNotNull(node.text, node.description).map { Normalize.collapse(it) }.filter { it.isNotBlank() }.forEach {
                 if (out.size < max) out += it
             }
-            if (depth < maxDepth) node.children.asReversed().forEach { stack.addLast(it to depth + 1) }
+            if (depth < maxDepth) node.children.asReversed().forEach {
+                stack.addLast(Triple(it, depth + 1, secretAncestor || node.isPassword))
+            }
         }
         return out.distinct()
     }
@@ -183,6 +185,10 @@ object NodeFinder {
     fun clickableAncestor(node: UiNode): UiNode? =
         generateSequence(node) { it.parent }.take(MAX_DEPTH).firstOrNull { it.isClickable && it.isEnabled }
 
+    /** Secret fields and their descendants are never eligible as spoken/tap targets. */
+    private fun isSafeForMatching(node: UiNode): Boolean =
+        node.isVisible && generateSequence(node) { it.parent }.take(MAX_DEPTH).none { it.isPassword }
+
     /** The focused editable field, else the only visible one; several and none focused is ambiguous. */
     fun editTarget(root: UiNode): EditTarget {
         val visible = ArrayList<UiNode>()
@@ -224,8 +230,11 @@ object NodeFinder {
     /** Flattened, visible, labelled (or actionable) nodes in document order for the core layer. */
     fun flatten(root: UiNode, max: Int = 400): List<ScreenNode> {
         val out = ArrayList<ScreenNode>()
-        walk(root) { node ->
-            if (out.size >= max || !node.isVisible) return@walk
+        val stack = ArrayDeque<Pair<UiNode, Boolean>>()
+        stack.addLast(root to false)
+        while (stack.isNotEmpty() && out.size < max) {
+            val (node, secretAncestor) = stack.removeLast()
+            if (!node.isVisible || secretAncestor || node.isPassword) continue
             val hasLabel = !node.text.isNullOrBlank() || !node.description.isNullOrBlank()
             if (hasLabel || node.isEditable || node.isScrollable) {
                 out += ScreenNode(
@@ -235,9 +244,11 @@ object NodeFinder {
                     className = node.className,
                     clickable = node.isClickable,
                     editable = node.isEditable,
+                    password = node.isPassword,
                     scrollable = node.isScrollable,
                 )
             }
+            node.children.asReversed().forEach { stack.addLast(it to (secretAncestor || node.isPassword)) }
         }
         return out
     }

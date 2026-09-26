@@ -45,7 +45,7 @@ class SafetyTest {
     }
 
     @ParameterizedTest(name = "safe: {0}")
-    @ValueSource(strings = ["Like", "Página siguiente", "Next", "Volgende", "Wireless settings", "Dialog", "Europe 2024", "Publicaciones"])
+    @ValueSource(strings = ["Like", "Página siguiente", "Wireless settings", "Dialog", "Europe 2024", "Publicaciones"])
     fun `harmless targets need no confirmation`(label: String) {
         assertNull(detector.find(label))
     }
@@ -160,5 +160,22 @@ class SafetyTest {
         val fenced = UntrustedText.fence(ScreenSnapshot(null, listOf(ScreenNode(text = "Código 482913 para ana@example.com"))))
         assertFalse(fenced.contains("482913"))
         assertFalse(fenced.contains("ana@example.com"))
+    }
+
+    @Test
+    fun `secret fields are excluded from spoken and cloud screen data`() {
+        val snapshot = ScreenSnapshot(null, listOf(
+            ScreenNode(text = "Password hunter2", password = true),
+            ScreenNode(text = "Continue", clickable = true),
+        ))
+        assertEquals(listOf("Continue"), snapshot.readableLines())
+        assertFalse(UntrustedText.fence(snapshot).contains("hunter2"))
+    }
+
+    @Test
+    fun `generic authorization workflow labels require confirmation`() {
+        assertTrue(detector.isSensitive("Submit"))
+        assertTrue(detector.isSensitive("Continue"))
+        assertTrue(detector.isSensitive("Autoriseren"))
     }
 }
