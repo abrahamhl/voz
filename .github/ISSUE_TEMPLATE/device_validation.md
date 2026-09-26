@@ -8,11 +8,14 @@ labels: device-validation
 |---|---|---|---|---|---|---|
 | | | | | | | |
 
+**Automated smoke run** (`scripts/device-smoke.sh`): `OK` / `FAIL` — evidence folder:
+
 **Failed steps (✗) and what happened:**
 
 - A?:
 - B?:
 - C?:
 - D?:
+- E?:
 
 **Anything that surprised you** (good or bad):

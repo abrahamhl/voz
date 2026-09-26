@@ -1,0 +1,6 @@
+# Run folders can contain personal data (screenshots, logcat); attach them to the
+# validation issue instead of committing them. Only the docs are tracked.
+*
+!.gitignore
+!README.md
+!TEMPLATE.md
