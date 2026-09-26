@@ -1,48 +1,65 @@
 # VOZ — one-page pitch
 
-**VOZ lets anyone run an Android phone by voice: open apps, hear the screen, tap, type and even “read me the funniest comments”. Accessibility-first, works offline on any Android 8+ phone, auditable because it is open source.**
+**VOZ is a voice-control tool for Android, built for blind, low-vision and motor-impaired people. It works in Dutch,
+Spanish and English, runs its command grammar on the phone, and asks before anything risky.**
+
+> Evidence status (September 2026): release candidate, CI-verified only. Not yet run on a physical phone, and not yet
+> used by any disabled person. Every claim below is labelled with what supports it.
 
 ## Problem
 
-- At least **2.2 billion people** live with a near or distance vision impairment ([WHO, Blindness and vision impairment](https://www.who.int/news-room/fact-sheets/detail/blindness-and-visual-impairment)). **1.3 billion** (16 % of humanity) experience a significant disability ([WHO, Disability](https://www.who.int/news-room/fact-sheets/detail/disability-and-health)); **90 million** of them live in the EU ([European Commission](https://commission.europa.eu/strategy-and-policy/policies/justice-and-fundamental-rights/disability/union-equality-strategy-rights-persons-disabilities-2021-2030_en)).
-- An estimated **3.5 billion people will need assistive technology by 2050**, and in some low-income countries as few as **3 %** have access to what they need ([WHO, Assistive technology](https://www.who.int/news-room/fact-sheets/detail/assistive-technology)).
-- Screen readers made phones usable without sight, but they are **navigation tools**: every task is still dozens of swipes and gestures. For people with tremor, paralysis or fatigue, touch itself is the barrier.
+- At least **2.2 billion people** live with a near or distance vision impairment
+  ([WHO](https://www.who.int/news-room/fact-sheets/detail/blindness-and-visual-impairment)). **1.3 billion** experience
+  a significant disability ([WHO](https://www.who.int/news-room/fact-sheets/detail/disability-and-health)); about
+  **90 million** live in the EU
+  ([European Commission](https://commission.europa.eu/strategy-and-policy/policies/justice-and-fundamental-rights/disability/union-equality-strategy-rights-persons-disabilities-2021-2030_en)).
+- An estimated **3.5 billion people will need assistive technology by 2050**
+  ([WHO](https://www.who.int/news-room/fact-sheets/detail/assistive-technology)).
+- Free tools exist and are good: Google Voice Access, TalkBack voice commands, Gemini. But gaps remain for specific
+  users. Voice Access, for example, does not list Dutch among its languages
+  ([Google help, checked 2026-09-23](https://support.google.com/accessibility/android/answer/6151848?hl=en)).
 
 ## Solution
 
-VOZ is a voice layer on top of Android’s accessibility service:
-
 1. **Say it** (ES / EN / NL): “Busca gatitos en YouTube”, “Tap Subscribe”, “Lees het scherm voor”.
-2. **VOZ does the taps**: opens apps, presses buttons by their visible label, scrolls, types, reads the screen aloud, controls volume and rotation.
-3. **Wow moment:** on any YouTube video, “read the funniest comments” opens the panel, scrolls, dedupes, ranks by laughter and likes, and reads the top three.
-4. **Safety built in:** risky targets (send, pay, buy, delete, call, transfer) require a spoken “yes”; “para/stop” halts everything; screen text is treated as untrusted data; an on-device action log shows exactly what happened.
+2. **VOZ does it:** opens apps, presses buttons by name, scrolls, types, reads the screen, controls volume and rotation.
+3. **Safety first:** 19 fixed actions; confirmation before send, pay, delete, call, subscribe and similar actions; no
+   guessing between identical buttons; the screen is re-checked after “yes”; screen text is treated as hostile.
+4. **Honest UI:** the mic turns yellow only when it is really listening; every result is spoken and shown as text; each
+   error has one way out.
 
 ## Why now
 
-- **The OS is opening up to agents.** Android’s new AppFunctions API lets apps expose actions “like on device MCP servers” to agents and assistants — still an experimental preview ([Android Developers](https://developer.android.com/ai/appfunctions)). The direction is clear; the coverage is not there yet, so screen-level control remains the universal path.
-- **On-device AI is real but premium-only.** Gemini Nano through ML Kit GenAI runs on a list of recent flagship devices (Pixel 9–11, Galaxy S25/S26 and similar) ([Google ML Kit GenAI](https://developers.google.com/ml-kit/genai)). Most disabled users do not own those phones.
-- **Android is the majority platform:** 67.6 % of mobile OS share worldwide in August 2026 ([StatCounter](https://gs.statcounter.com/os-market-share/mobile/worldwide)).
-- **Policy favours real accessibility tools.** Google Play forbids autonomous agents built on the Accessibility API *except* verified accessibility tools whose core purpose is assisting people with disabilities ([Play policy](https://support.google.com/googleplay/android-developer/answer/10964491)). VOZ is designed to qualify; generic “AI agent” apps are not.
+- **Policy:** Google Play forbids Accessibility-API automation that plans and acts on its own, *except* for verified
+  accessibility tools whose core purpose is assisting people with disabilities
+  ([Play policy](https://support.google.com/googleplay/android-developer/answer/10964491)). VOZ is designed to qualify.
+- **On-device AI has limits:** Gemini Nano through ML Kit GenAI is beta, runs on a list of recent devices, and is
+  blocked when the app is not in the foreground ([ML Kit GenAI](https://developers.google.com/ml-kit/genai)). A
+  screen-level tool that acts on other apps needs a different design, and VOZ’s offline grammar is one.
+- **Android** is the majority mobile platform worldwide
+  ([StatCounter](https://gs.statcounter.com/os-market-share/mobile/worldwide)).
 
-## Wedge
+## Wedge (to be proven)
 
-- **Accessibility-first, not an AI demo:** built with and for blind and motor-impaired users, TalkBack-friendly, large targets, high contrast.
-- **Any Android, offline core:** the grammar and ranking run locally in milliseconds on an Android 8 phone; the cloud is optional (bring your own key).
-- **Auditable:** Apache-2.0, fixed action vocabulary, local validator, on-device action log. Organisations can inspect exactly what it may do.
-- **Multilingual from day one:** Spanish, English and Dutch grammars, extensible per language.
+- **Dutch-speaking motor-impaired users** first: the one gap with a public source today.
+- **Local and account-free:** no Google account or cloud needed for the command grammar.
+- **Auditable** once the repository is public: fixed action list, local validator, readable history.
 
-## Traction plan (next 6 months)
+## Plan (closed cycles)
 
 | Cycle | Goal | Proof point |
 |---|---|---|
-| 1. Real-device hardening | 6-phone test matrix, YouTube label packs, TalkBack co-existence | 15-minute checklist passes on 5 of 6 phones |
-| 2. Pilots | 2–3 disability organisations (NL, ES), 30 daily users | Weekly active use, tasks completed per session, time saved vs. screen reader alone |
-| 3. Distribution | Google Play accessibility-tool review, F-Droid, organisation-managed installs | Listing approved; first B2B/B2G letter of intent |
+| 1. Device validation | 15-minute pack on ≥2 phones (one Android 13+, one with TalkBack) | Results table in the device matrix |
+| 2. First users | 6 Dutch- or Spanish-speaking testers with motor or visual impairments, 14 days | ≥3 of 6 still use VOZ on day 14 |
+| 3. Distribution | Google Play accessibility-tool review, or organisation-managed installs | Listing approved, or one organisation letter of intent |
+
+Kill criteria: the core loop fails on 2 of 3 phones after 3 fix rounds, fewer than 3 of 6 testers keep using it, or
+Voice Access ships Dutch before VOZ has 10 users.
 
 ## Ask
 
 - **Pilot partners:** disability organisations and rehabilitation centres in the Netherlands and Spain.
-- **Funding:** pre-seed or grant of **[OWNER TO SET]** to fund 12 months (one Android engineer, accessibility user research, device lab).
-- **Advisors:** accessibility policy (Play review), assistive-technology procurement (B2G).
+- **Funding:** **[OWNER TO SET]**, only after cycle 1 passes.
+- **Advisors:** accessibility policy (Play review), assistive-technology procurement.
 
 Contact: via the GitHub profile [@abrahamhl](https://github.com/abrahamhl).

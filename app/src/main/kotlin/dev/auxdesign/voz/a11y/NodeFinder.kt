@@ -50,6 +50,40 @@ object NodeFinder {
 
     data class Hit(val node: UiNode, val label: String, val score: Double)
 
+    /**
+     * What a tap would really press: the clickable ancestor ([pressed]; null = tap [hit]'s own bounds) and
+     * [labels] = the matched text plus that container's own text and description.
+     */
+    data class TapTarget(val hit: Hit, val pressed: UiNode?, val labels: List<String>, val inner: List<String> = emptyList()) {
+        val bounds: Box get() = (pressed ?: hit.node).bounds
+
+        /**
+         * Everything the press may trigger: [labels] plus the texts inside the pressed container ([inner]).
+         * View-based buttons keep their text in child views, so "tap Visa" can press a "Pagar 49,99 €" row.
+         */
+        val riskLabels: List<String> get() = (labels + inner).distinct()
+
+        /** Same labels at the same place. */
+        fun sameAs(other: TapTarget): Boolean =
+            bounds == other.bounds && labels.map(Normalize::forMatch) == other.labels.map(Normalize::forMatch)
+    }
+
+    sealed interface TapResolution {
+        data class Found(val target: TapTarget) : TapResolution
+
+        /** [count] different controls match equally well (e.g. one "Eliminar" per row); [target] is the first. */
+        data class Ambiguous(val target: TapTarget, val count: Int) : TapResolution
+        data object NotFound : TapResolution
+    }
+
+    sealed interface EditTarget {
+        data class Found(val node: UiNode) : EditTarget
+
+        /** Nothing focused and [count] visible fields: guessing could put a password into the e-mail field. */
+        data class Ambiguous(val count: Int) : EditTarget
+        data object None : EditTarget
+    }
+
     /** Best visible node whose text or content description matches [label]. */
     fun findByLabel(root: UiNode, label: String, minScore: Double = DEFAULT_MIN_SCORE): Hit? {
         val query = Normalize.forMatch(label)
@@ -58,15 +92,83 @@ object NodeFinder {
         walk(root) { node ->
             if (!node.isVisible) return@walk
             for (raw in listOfNotNull(node.text, node.description)) {
-                val candidate = Normalize.forMatch(raw)
-                if (candidate.isEmpty()) continue
-                var score = score(query, candidate)
-                if (score > 0.0 && clickableAncestor(node) != null) score += ACTIONABLE_BONUS
+                val score = scoreNode(query, raw, node) ?: continue
                 val current = best
                 if (current == null || score > current.score) best = Hit(node, Normalize.collapse(raw), score)
             }
         }
         return best?.takeIf { it.score >= minScore }
+    }
+
+    /** The control a tap on [label] would press, and whether other controls match it just as well. */
+    fun resolveTap(root: UiNode, label: String, minScore: Double = DEFAULT_MIN_SCORE): TapResolution {
+        val best = findByLabel(root, label, minScore) ?: return TapResolution.NotFound
+        val target = tapTarget(best)
+        val query = Normalize.forMatch(label)
+        // Distinct places that would be pressed; the same control reached twice has the same bounds.
+        val places = hashSetOf(target.bounds)
+        walk(root) { node ->
+            if (!node.isVisible) return@walk
+            val tie = listOfNotNull(node.text, node.description).any { raw ->
+                (scoreNode(query, raw, node) ?: return@any false) >= best.score - TIE_EPSILON
+            }
+            if (tie) places += (clickableAncestor(node) ?: node).bounds
+        }
+        return if (places.size > 1) TapResolution.Ambiguous(target, places.size) else TapResolution.Found(target)
+    }
+
+    fun tapTarget(hit: Hit): TapTarget {
+        val clickable = clickableAncestor(hit.node)
+        val labels = listOfNotNull(hit.label, clickable?.text, clickable?.description)
+            .map { Normalize.collapse(it) }
+            .filter { it.isNotBlank() }
+            .distinct()
+        return TapTarget(hit, clickable, labels, clickable?.let { innerLabels(it) }.orEmpty())
+    }
+
+    /** Texts of the visible views inside [container], bounded (a whole-screen container must not flood the check). */
+    fun innerLabels(container: UiNode, max: Int = MAX_INNER_LABELS, maxDepth: Int = MAX_INNER_DEPTH): List<String> {
+        val out = ArrayList<String>()
+        val stack = ArrayDeque<Pair<UiNode, Int>>()
+        container.children.asReversed().forEach { stack.addLast(it to 1) }
+        while (stack.isNotEmpty() && out.size < max) {
+            val (node, depth) = stack.removeLast()
+            if (!node.isVisible) continue
+            listOfNotNull(node.text, node.description).map { Normalize.collapse(it) }.filter { it.isNotBlank() }.forEach {
+                if (out.size < max) out += it
+            }
+            if (depth < maxDepth) node.children.asReversed().forEach { stack.addLast(it to depth + 1) }
+        }
+        return out.distinct()
+    }
+
+    /**
+     * Where to tap a node that has no clickable view (web content): the centre of its on-screen part.
+     * Null when nothing of it is on screen; gestures with negative coordinates are rejected by Android.
+     */
+    fun visibleCenter(bounds: Box, screenWidth: Int, screenHeight: Int): Pair<Int, Int>? {
+        val left = bounds.left.coerceAtLeast(0)
+        val top = bounds.top.coerceAtLeast(0)
+        val right = bounds.right.coerceAtMost(screenWidth)
+        val bottom = bounds.bottom.coerceAtMost(screenHeight)
+        if (right <= left || bottom <= top) return null
+        return (left + right) / 2 to (top + bottom) / 2
+    }
+
+    /**
+     * Answering "¿Confirmo?" takes seconds; meanwhile a list can rebind or a page reflow. Re-resolve [label] on
+     * the fresh [rootNow] and return the target only if it is still the one the user confirmed.
+     */
+    fun recheck(confirmed: TapTarget, rootNow: UiNode?, label: String): TapTarget? {
+        val now = rootNow?.let { resolveTap(it, label) } as? TapResolution.Found ?: return null
+        return now.target.takeIf { it.sameAs(confirmed) }
+    }
+
+    private fun scoreNode(query: String, raw: String, node: UiNode): Double? {
+        val candidate = Normalize.forMatch(raw)
+        if (candidate.isEmpty()) return null
+        val score = score(query, candidate)
+        return if (score > 0.0 && clickableAncestor(node) != null) score + ACTIONABLE_BONUS else score
     }
 
     /** Exact beats prefix beats suffix beats whole-word containment beats fuzzy. */
@@ -81,17 +183,22 @@ object NodeFinder {
     fun clickableAncestor(node: UiNode): UiNode? =
         generateSequence(node) { it.parent }.take(MAX_DEPTH).firstOrNull { it.isClickable && it.isEnabled }
 
-    /** The focused editable field, else the first visible editable field. */
-    fun focusedEditable(root: UiNode): UiNode? {
-        var firstEditable: UiNode? = null
+    /** The focused editable field, else the only visible one; several and none focused is ambiguous. */
+    fun editTarget(root: UiNode): EditTarget {
+        val visible = ArrayList<UiNode>()
         var focused: UiNode? = null
         walk(root) { node ->
             if (focused == null && node.isEditable && node.isVisible) {
                 if (node.isFocused) focused = node
-                if (firstEditable == null) firstEditable = node
+                visible += node
             }
         }
-        return focused ?: firstEditable
+        focused?.let { return EditTarget.Found(it) }
+        return when (visible.size) {
+            0 -> EditTarget.None
+            1 -> EditTarget.Found(visible.single())
+            else -> EditTarget.Ambiguous(visible.size)
+        }
     }
 
     /**
@@ -152,4 +259,7 @@ object NodeFinder {
     }
 
     private const val ACTIONABLE_BONUS = 0.01
+    private const val TIE_EPSILON = 1e-9
+    private const val MAX_INNER_LABELS = 12
+    private const val MAX_INNER_DEPTH = 4
 }

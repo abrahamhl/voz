@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Floating mic (a View, outside Compose). Contrast: icon 10.34 on navy, 14.94 on yellow. -->
     <color name="voz_brand">#FF1B3A8C</color>
-    <color name="voz_listening">#FFC62828</color>
+    <color name="voz_on_brand">#FFFFFFFF</color>
+    <color name="voz_voice">#FFFFE600</color>
+    <color name="voz_on_voice">#FF0B1020</color>
+    <!-- Window backgrounds, so dark mode never flashes white before Compose draws. -->
+    <color name="voz_window_light">#FFFFFFFF</color>
+    <color name="voz_window_dark">#FF0B1020</color>
 </resources>
